@@ -11,7 +11,8 @@
     "type-check": "tsc --noEmit",
     "test": "vitest run",
     "seed": "tsx src/scripts/seed.ts",
-    "bootstrap-admin": "tsx src/scripts/bootstrap-admin.ts"
+    "bootstrap-admin": "tsx src/scripts/bootstrap-admin.ts",
+    "reset-admin": "tsx src/scripts/reset-admin.ts"
   },
   "dependencies": {
     "@apollo/server": "^5.0.0",
