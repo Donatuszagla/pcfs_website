@@ -1,0 +1,14 @@
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    host: "0.0.0.0",
+    allowedHosts: ["terminal.local", "localhost"],
+  },
+  build: {
+    outDir: "dist/client",
+    manifest: true,
+  },
+});

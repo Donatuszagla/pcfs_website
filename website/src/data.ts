@@ -1,0 +1,154 @@
+import type { SiteData } from "./types.js";
+
+export const fallbackSiteData: SiteData = {
+  settings: {
+    name: "Paradise City of Faith Sanctuary",
+    shortName: "PCFS",
+    description:
+      "A young, vibrant, charismatic ministry building effective people for Kingdom assignment through sound doctrine, practical ministry training and opportunities.",
+    vision: "Go and raise me a people. Isaiah 45:1–5, 13–14; Nehemiah 4:1.",
+    mission:
+      "We become all things to all men so that we might by all means win some for Christ. 1 Corinthians 9:22.",
+    socialLinks: [],
+  },
+  branches: [
+    {
+      id: "branch-accra",
+      name: "PCFS Headquarters",
+      slug: "headquarters-accra",
+      region: "Greater Accra",
+      city: "Accra",
+      location: "Sapeiman-Zinga, near Free Ridge School",
+      description: "The headquarters branch of Paradise City of Faith Sanctuary.",
+      image: "/images/Takoradi-branch.jpeg",
+      imageIsPlaceholder: true,
+      status: "PUBLISHED",
+    },
+    {
+      id: "branch-takoradi",
+      name: "Western Regional Branch",
+      slug: "western-regional-takoradi",
+      region: "Western",
+      city: "Takoradi",
+      location: "Mpintsin New Site, High Tension Down",
+      description: "The Western Regional expression of Paradise City of Faith Sanctuary.",
+      image: "/images/Takoradi-branch.jpeg",
+      imageIsPlaceholder: true,
+      status: "PUBLISHED",
+    },
+    ...["Ngyiresia", "Sofokrom", "Ahinkofi"].map((city, index) => ({
+      id: `branch-sub-${index + 1}`,
+      name: `${city} Branch`,
+      slug: `${city.toLowerCase()}-branch`,
+      region: "Western",
+      city,
+      location: "Location details pending confirmation",
+      description: "Branch details will be updated by the PCFS communications team.",
+      image: "/images/Takoradi-branch.jpeg",
+      imageIsPlaceholder: true,
+      status: "PUBLISHED" as const,
+    })),
+  ],
+  events: [
+    {
+      id: "event-rfmc-2026",
+      title: "RFMC 2026",
+      slug: "rfmc-2026",
+      theme: "FIGHT THE GOOD FIGHT!",
+      description:
+        "A PCFS ministry conference held during the church's 10th-anniversary season, centred on 1 Timothy 6:12.",
+      startAt: "2026-09-18T18:00:00+00:00",
+      endAt: "2026-09-20T21:00:00+00:00",
+      venue: "Church Auditorium, Mpintsin New Site, High Tension Down",
+      speakers: ["Pastor David Komlagah", "Reverend Bernard O. Boayeg"],
+      image: "/images/rfmc-worship.png",
+      featured: true,
+      status: "PUBLISHED",
+    },
+  ],
+  media: [
+    {
+      id: "media-featured",
+      title: "Growing Through Sound Doctrine",
+      slug: "growing-through-sound-doctrine",
+      type: "VIDEO",
+      speaker: "PCFS Teaching Ministry",
+      category: "Teaching",
+      description: "A temporary featured-media entry ready to be replaced with an official PCFS message.",
+      publishedAt: "2026-08-24T10:00:00+00:00",
+      image: "/images/featured-teaching.png",
+      featured: true,
+      status: "PUBLISHED",
+    },
+    ...["Shepherding P1", "Shepherding P2", "Shepherding P3"].map((title, index) => ({
+      id: `media-shepherding-${index + 1}`,
+      title,
+      slug: `shepherding-p${index + 1}`,
+      type: "AUDIO" as const,
+      speaker: "PCFS Teaching Ministry",
+      category: "Sermon",
+      description: "Audio details and official link pending upload by the PCFS media team.",
+      publishedAt: `2026-08-${20 - index}T10:00:00+00:00`,
+      image: "/images/featured-teaching.png",
+      featured: false,
+      status: "PUBLISHED" as const,
+    })),
+  ],
+  leaders: [
+    {
+      id: "leader-seth-lartey",
+      name: "Rev. Dr. Seth Lartey",
+      title: "General Overseer",
+      bio: "Official biography pending approval from PCFS leadership.",
+      status: "PUBLISHED",
+      image: "/images/Rev-Seth2.jpeg",
+      portrait: "/images/Rev-Seth2.jpeg",
+      imageIsPlaceholder: false,
+    },
+    {
+      id: "leader-david-komlagah",
+      name: "Rev. David Komlagah",
+      title: "Head Pastor, Takoradi Branch",
+      bio: "Official biography pending approval from PCFS leadership.",
+      status: "PUBLISHED",
+      image: "/images/Rev-David.jpeg",
+      portrait: "/images/Rev-David.jpeg",
+      imageIsPlaceholder: false,
+    },
+  ],
+  ministries: [
+    { id: "kmi", name: "Kiddie Ministry International", slug: "kiddie-ministry", audience: "Ages 1–5", description: "Faith foundation, listening, storytelling, creativity and simple service tasks.", status: "PUBLISHED" },
+    { id: "smi", name: "Star Ministry International", slug: "star-ministry", audience: "Ages 6–12", description: "Biblical literacy, gifts discovery, team activities and peer service.", status: "PUBLISHED" },
+    { id: "flmi", name: "Future Leaders Ministry International", slug: "future-leaders", audience: "Ages 13–16", description: "Leadership, mentoring, practical skills and personal discipleship.", status: "PUBLISHED" },
+  ],
+};
+
+const PUBLIC_SITE_QUERY = `query PublicSite { publicSite { settings { name shortName description vision mission contactEmail contactPhone socialLinks { label url } } branches { id name slug region city location description serviceTimes phone directionsUrl image imageIsPlaceholder status } events { id title slug theme description startAt endAt venue speakers registrationUrl image featured status } media { id title slug type speaker category description publishedAt externalUrl image featured status } leaders { id name title bio portrait status } ministries { id name slug audience description status } } }`;
+
+/** Loads published CMS content and falls back to the approved seed content when the API is unavailable. */
+export async function loadSiteData(apiUrl = process.env.API_URL ?? "http://localhost:4000/graphql"): Promise<SiteData> {
+  try {
+    const response = await fetch(apiUrl, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ query: PUBLIC_SITE_QUERY }),
+      signal: AbortSignal.timeout(2500),
+    });
+    if (!response.ok) return fallbackSiteData;
+    const payload = (await response.json()) as { data?: { publicSite?: Partial<SiteData> } };
+    const siteData = payload.data?.publicSite;
+    if (!siteData) return fallbackSiteData;
+    return {
+      ...fallbackSiteData,
+      ...siteData,
+      settings: siteData.settings ?? fallbackSiteData.settings,
+      branches: siteData.branches?.length ? siteData.branches : fallbackSiteData.branches,
+      events: siteData.events?.length ? siteData.events : fallbackSiteData.events,
+      media: siteData.media?.length ? siteData.media : fallbackSiteData.media,
+      leaders: siteData.leaders?.length ? siteData.leaders : fallbackSiteData.leaders,
+      ministries: siteData.ministries?.length ? siteData.ministries : fallbackSiteData.ministries,
+    };
+  } catch {
+    return fallbackSiteData;
+  }
+}

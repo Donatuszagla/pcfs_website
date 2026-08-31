@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PCFS homepage design comparison</title>
+    <style>
+      body { margin: 0; background: #111; color: white; font: 16px system-ui; }
+      .labels { position: sticky; top: 0; z-index: 2; display: grid; grid-template-columns: 1fr 1fr; background: #111; }
+      .labels b { padding: 12px; text-align: center; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; align-items: start; gap: 8px; padding: 8px; }
+      .grid img { width: 100%; height: auto; display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="labels"><b>Approved target</b><b>Implemented 1440px viewport</b></div>
+    <div class="grid"><img src="/qa/approved-homepage.png" alt="Approved homepage target" /><img src="/qa/implemented-homepage.png" alt="Implemented homepage" /></div>
+  </body>
+</html>
