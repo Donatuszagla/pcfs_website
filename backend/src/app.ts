@@ -1,0 +1,36 @@
+import { ApolloServer } from "@apollo/server";
+import { expressMiddleware } from "@as-integrations/express5";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express, { type Express } from "express";
+import rateLimit from "express-rate-limit";
+import { config } from "./config.js";
+import { typeDefs, resolvers } from "./schema.js";
+import { actorFromAccessToken } from "./services/auth.service.js";
+import type { GraphqlContext } from "./types.js";
+import { createUploadRouter } from "./upload-router.js";
+
+/** Builds and starts the Express/Apollo application without opening a network port. */
+export async function createApp(): Promise<Express> {
+  const app = express();
+  app.disable("x-powered-by");
+  app.set("trust proxy", 1);
+  app.use(cors({ origin: [config.WEBSITE_ORIGIN, config.ADMIN_ORIGIN], credentials: true }));
+  app.use(cookieParser());
+  app.use(rateLimit({ windowMs: 15 * 60_000, limit: 500, standardHeaders: "draft-8", legacyHeaders: false }));
+  app.get("/health", (_request, response) => response.json({ ok: true }));
+  app.use("/api/uploads", createUploadRouter());
+
+  const apollo = new ApolloServer<GraphqlContext>({ typeDefs, resolvers, includeStacktraceInErrorResponses: config.NODE_ENV !== "production" });
+  await apollo.start();
+  app.use("/graphql", express.json({ limit: "1mb" }), expressMiddleware(apollo, {
+    context: async ({ req, res }) => ({ actor: actorFromAccessToken(req.header("authorization")?.replace(/^Bearer\s+/i, "")), request: req, response: res }),
+  }));
+
+  app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
+    void _next;
+    const message = error instanceof Error ? error.message : "Unexpected server error";
+    response.status(400).json({ error: message });
+  });
+  return app;
+}
