@@ -102,6 +102,46 @@ a { color: inherit; text-decoration: none; }
 .enquiry p { white-space: pre-wrap; line-height: 1.75; color: #40506d; }
 .drawer-scrim { display: none; }
 
+/* Modal & Visual Form Controls */
+.modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 1.5rem; background: rgba(9, 20, 48, 0.65); backdrop-filter: blur(8px); animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalPop { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.modal-dialog { width: min(780px, 100%); max-height: 90vh; display: flex; flex-direction: column; background: white; border-radius: 20px; box-shadow: 0 24px 64px rgba(9, 20, 48, 0.25); border: 1px solid var(--line); overflow: hidden; animation: modalPop 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 1.2rem 1.8rem; background: #f8faff; border-bottom: 1px solid var(--line); }
+.modal-header-title { display: flex; align-items: center; gap: .8rem; }
+.modal-header-title svg { font-size: 1.6rem; color: var(--blue); }
+.modal-header-title h2 { margin: 0; font: 800 1.3rem/1.2 Manrope, sans-serif; color: var(--ink); }
+.modal-header-title p { margin: .2rem 0 0; color: var(--muted); font-size: .8rem; }
+.modal-body { padding: 1.8rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1.2rem; }
+.modal-footer { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.8rem; background: #f8faff; border-top: 1px solid var(--line); gap: 1rem; flex-wrap: wrap; }
+.modal-footer-actions { display: flex; align-items: center; gap: .6rem; }
+
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+.form-grid.full { grid-template-columns: 1fr; }
+.form-group { display: flex; flex-direction: column; gap: .45rem; }
+.form-group.span-2 { grid-column: span 2; }
+.form-group label { font-size: .82rem; font-weight: 700; color: #2d384e; display: flex; align-items: center; justify-content: space-between; }
+.form-group label .required { color: #d93838; font-size: .75rem; }
+.form-control, .form-select, .form-textarea { width: 100%; border: 1px solid var(--line); border-radius: 10px; padding: .7rem .9rem; font-size: .9rem; color: var(--ink); background: white; outline: none; transition: border-color .15s ease, box-shadow .15s ease; }
+.form-control { height: 46px; }
+.form-select { height: 46px; appearance: auto; cursor: pointer; }
+.form-textarea { min-height: 110px; resize: vertical; line-height: 1.55; }
+.form-control:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(17,60,167,.12); }
+
+.form-checkbox-group { display: flex; align-items: center; gap: .7rem; padding: .6rem 0; cursor: pointer; }
+.form-checkbox-group input[type="checkbox"] { width: 20px; height: 20px; accent-color: var(--blue); border-radius: 6px; cursor: pointer; }
+.form-checkbox-group span { font-size: .88rem; font-weight: 700; color: var(--ink); }
+
+.img-preview-box { display: flex; align-items: center; gap: 1rem; margin-top: .4rem; padding: .6rem; background: #f6f8fd; border: 1px solid var(--line); border-radius: 10px; }
+.img-preview-box img { width: 56px; height: 56px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: white; }
+.img-preview-box span { font-size: .78rem; color: var(--muted); font-weight: 600; word-break: break-all; }
+
+.editor-mode-toggle { display: flex; align-items: center; gap: .4rem; background: #edf2ff; padding: .3rem; border-radius: 10px; border: 1px solid #d6e1ff; width: fit-content; }
+.editor-mode-toggle button { height: 32px; padding: 0 .8rem; border-radius: 7px; border: 0; background: none; font-size: .78rem; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .15s ease; }
+.editor-mode-toggle button.active { background: white; color: var(--blue); box-shadow: 0 2px 6px rgba(17,60,167,.12); }
+
+
 @media (max-width: 1000px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
 }

@@ -50,12 +50,140 @@ function ContentList() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
-  useEffect(() => {
+  const [activeModalRecord, setActiveModalRecord] = useState<ContentRecord | "new" | null>(null);
+
+  const fetchRecords = () => {
     setStatus("loading");
-    graphqlRequest<{ adminRecords: ContentRecord[] }>(operations.records, { data: { kind, search: search || undefined, limit: 100 } }, accessToken).then(({ adminRecords }) => { setRecords(adminRecords); setStatus("ready"); }).catch((caught) => { setError(caught instanceof Error ? caught.message : "Could not load content"); setStatus("error"); });
+    graphqlRequest<{ adminRecords: ContentRecord[] }>(operations.records, { data: { kind, search: search || undefined, limit: 100 } }, accessToken)
+      .then(({ adminRecords }) => { setRecords(adminRecords); setStatus("ready"); })
+      .catch((caught) => { setError(caught instanceof Error ? caught.message : "Could not load content"); setStatus("error"); });
+  };
+
+  useEffect(() => {
+    fetchRecords();
   }, [accessToken, kind, search]);
+
   const editable = !["SUBMISSION", "USER"].includes(kind);
-  return <><PageTitle eyebrow="CONTENT" title={section?.label ?? kind} description={`Manage ${section?.label.toLowerCase() ?? "records"}, publishing state and public visibility.`} action={editable ? <Link className="button primary" to={`/content/${rawKind}/new`}>Create new</Link> : undefined} /><div className="toolbar"><label className="search-field"><span className="sr-only">Search</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${section?.label.toLowerCase() ?? "content"}…`} /></label></div>{status === "loading" && <InlineStatus label="Loading content…" />}{status === "error" && <div className="alert error" role="alert">{error}</div>}{status === "ready" && records.length === 0 && <EmptyState kind={section?.label ?? kind} editable={editable} href={`/content/${rawKind}/new`} />}{status === "ready" && records.length > 0 && <div className="record-list">{records.map((record) => <Link to={`/content/${rawKind}/${record.id}`} className="record-row" key={record.id}><div><strong>{recordLabel(record)}</strong><small>{recordSecondary(record)}</small></div><span className={`status-badge ${record.status?.toLowerCase()}`}>{record.status ?? "RECEIVED"}</span><time>{formatDate(record.updatedAt ?? record.createdAt)}</time><CaretRight /></Link>)}</div>}</>;
+
+  return (
+    <>
+      <PageTitle
+        eyebrow="CONTENT"
+        title={section?.label ?? kind}
+        description={`Manage ${section?.label.toLowerCase() ?? "records"}, publishing state and public visibility.`}
+        action={editable ? <button className="button primary" onClick={() => setActiveModalRecord("new")}>Create new</button> : undefined}
+      />
+      <div className="toolbar">
+        <label className="search-field">
+          <span className="sr-only">Search</span>
+          <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={`Search ${section?.label.toLowerCase() ?? "content"}…`} />
+        </label>
+      </div>
+      {status === "loading" && <InlineStatus label="Loading content…" />}
+      {status === "error" && <div className="alert error" role="alert">{error}</div>}
+      {status === "ready" && records.length === 0 && <EmptyState kind={section?.label ?? kind} editable={editable} onClickCreate={() => setActiveModalRecord("new")} />}
+      {status === "ready" && records.length > 0 && (
+        <div className="record-list">
+          {records.map((record) => (
+            <div
+              className="record-row"
+              key={record.id}
+              onClick={() => editable ? setActiveModalRecord(record) : null}
+              style={{ cursor: editable ? "pointer" : "default" }}
+            >
+              <div>
+                <strong>{recordLabel(record)}</strong>
+                <small>{recordSecondary(record)}</small>
+              </div>
+              <span className={`status-badge ${record.status?.toLowerCase()}`}>{record.status ?? "RECEIVED"}</span>
+              <time>{formatDate(record.updatedAt ?? record.createdAt)}</time>
+              <CaretRight />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {activeModalRecord && (
+        <ContentModalWrapper
+          kind={kind}
+          record={activeModalRecord === "new" ? undefined : activeModalRecord}
+          accessToken={accessToken}
+          onClose={() => setActiveModalRecord(null)}
+          onSuccess={() => {
+            setActiveModalRecord(null);
+            fetchRecords();
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function ContentModalWrapper({
+  kind,
+  record,
+  accessToken,
+  onClose,
+  onSuccess,
+}: {
+  kind: ContentKind;
+  record?: ContentRecord;
+  accessToken?: string;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [values, setValues] = useState<Record<string, any>>(record?.values || getDefaultValuesForKind(kind));
+  const [status, setStatus] = useState<"ready" | "saving" | "error">("ready");
+  const [message, setMessage] = useState("");
+
+  async function handleSave(valuesToSave?: Record<string, any>) {
+    setStatus("saving");
+    setMessage("");
+    try {
+      const payloadValues = valuesToSave || values;
+      const { saveContent } = await graphqlRequest<{ saveContent: ContentRecord }>(
+        operations.save,
+        { data: { kind, id: record?.id, values: payloadValues } },
+        accessToken
+      );
+      setStatus("ready");
+      setMessage("Changes saved as a draft.");
+      onSuccess();
+    } catch (caught) {
+      setStatus("error");
+      setMessage(caught instanceof Error ? caught.message : "Could not save changes");
+    }
+  }
+
+  async function handleTransition(operation: string, verb: string) {
+    if (!record) return;
+    setStatus("saving");
+    try {
+      await graphqlRequest<Record<string, ContentRecord>>(operation, { data: { kind, id: record.id } }, accessToken);
+      setMessage(`${verb} successfully.`);
+      setStatus("ready");
+      onSuccess();
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : `Could not ${verb.toLowerCase()}`);
+      setStatus("error");
+    }
+  }
+
+  return (
+    <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <VisualRecordEditor
+        kind={kind}
+        record={record}
+        values={values}
+        onChangeValues={setValues}
+        onSave={handleSave}
+        onTransition={handleTransition}
+        status={status}
+        message={message}
+        onClose={onClose}
+      />
+    </div>
+  );
 }
 
 function ContentEditor() {
@@ -64,20 +192,485 @@ function ContentEditor() {
   const { accessToken } = useAuth();
   const navigate = useNavigate();
   const [record, setRecord] = useState<ContentRecord>();
-  const [json, setJson] = useState("{}\n");
+  const [values, setValues] = useState<Record<string, any>>({});
   const [status, setStatus] = useState<"loading" | "ready" | "saving" | "error">(id === "new" ? "ready" : "loading");
   const [message, setMessage] = useState("");
+
   useEffect(() => {
-    if (id === "new") return;
-    graphqlRequest<{ adminRecords: ContentRecord[] }>(operations.records, { data: { kind, limit: 100 } }, accessToken).then(({ adminRecords }) => { const found = adminRecords.find((item) => item.id === id); if (!found) throw new Error("Record not found"); setRecord(found); setJson(`${JSON.stringify(found.values, null, 2)}\n`); setStatus("ready"); }).catch((caught) => { setMessage(caught instanceof Error ? caught.message : "Could not load record"); setStatus("error"); });
+    if (id === "new") {
+      setValues(getDefaultValuesForKind(kind));
+      return;
+    }
+    graphqlRequest<{ adminRecords: ContentRecord[] }>(operations.records, { data: { kind, limit: 100 } }, accessToken)
+      .then(({ adminRecords }) => {
+        const found = adminRecords.find((item) => item.id === id);
+        if (!found) throw new Error("Record not found");
+        setRecord(found);
+        setValues(found.values || {});
+        setStatus("ready");
+      })
+      .catch((caught) => {
+        setMessage(caught instanceof Error ? caught.message : "Could not load record");
+        setStatus("error");
+      });
   }, [accessToken, id, kind]);
-  async function save() { setStatus("saving"); setMessage(""); try { const values = JSON.parse(json) as Record<string, unknown>; const { saveContent } = await graphqlRequest<{ saveContent: ContentRecord }>(operations.save, { data: { kind, id: id === "new" ? undefined : id, values } }, accessToken); setRecord(saveContent); setJson(`${JSON.stringify(saveContent.values, null, 2)}\n`); setStatus("ready"); setMessage("Changes saved as a draft."); if (id === "new") navigate(`/content/${rawKind}/${saveContent.id}`, { replace: true }); } catch (caught) { setStatus("error"); setMessage(caught instanceof Error ? caught.message : "Could not save changes"); } }
-  async function transition(operation: string, verb: string) { if (!record) return; setStatus("saving"); try { const result = await graphqlRequest<Record<string, ContentRecord>>(operation, { data: { kind, id: record.id } }, accessToken); const updated = Object.values(result)[0]; setRecord(updated); setMessage(`${verb} successfully.`); setStatus("ready"); } catch (caught) { setMessage(caught instanceof Error ? caught.message : `Could not ${verb.toLowerCase()}`); setStatus("error"); } }
+
+  async function save(valuesToSave?: Record<string, any>) {
+    setStatus("saving");
+    setMessage("");
+    try {
+      const payloadValues = valuesToSave || values;
+      const { saveContent } = await graphqlRequest<{ saveContent: ContentRecord }>(
+        operations.save,
+        { data: { kind, id: id === "new" ? undefined : id, values: payloadValues } },
+        accessToken
+      );
+      setRecord(saveContent);
+      setValues(saveContent.values || {});
+      setStatus("ready");
+      setMessage("Changes saved as a draft.");
+      if (id === "new") navigate(`/content/${rawKind}/${saveContent.id}`, { replace: true });
+    } catch (caught) {
+      setStatus("error");
+      setMessage(caught instanceof Error ? caught.message : "Could not save changes");
+    }
+  }
+
+  async function transition(operation: string, verb: string) {
+    if (!record) return;
+    setStatus("saving");
+    try {
+      const result = await graphqlRequest<Record<string, ContentRecord>>(operation, { data: { kind, id: record.id } }, accessToken);
+      const updated = Object.values(result)[0];
+      setRecord(updated);
+      setValues(updated.values || {});
+      setMessage(`${verb} successfully.`);
+      setStatus("ready");
+    } catch (caught) {
+      setMessage(caught instanceof Error ? caught.message : `Could not ${verb.toLowerCase()}`);
+      setStatus("error");
+    }
+  }
+
   if (kind === "SUBMISSION") return <SubmissionDetail record={record} status={status} message={message} accessToken={accessToken} />;
-  return <><PageTitle eyebrow={id === "new" ? "NEW RECORD" : "EDIT RECORD"} title={id === "new" ? `Create ${rawKind}` : recordLabel(record)} description="Structured JSON is used here to preserve the typed section model. A field-specific editor can be added without changing the API contract." action={<button className="button primary" onClick={() => void save()} disabled={status === "saving"}>{status === "saving" ? "Saving…" : "Save draft"}</button>} />{message && <div className={status === "error" ? "alert error" : "alert success"} role="status">{message}</div>}<section className="panel editor-panel"><label>Record data<textarea className="json-editor" value={json} onChange={(event) => setJson(event.target.value)} spellCheck={false} aria-describedby="json-help" /></label><small id="json-help">Fields are validated by the backend model. Slugs must be unique.</small><div className="editor-actions"><button className="button secondary" onClick={() => void transition(operations.publish, "Published")} disabled={!record || status === "saving"}>Publish</button><button className="button danger" onClick={() => void transition(operations.archive, "Archived")} disabled={!record || status === "saving"}><Archive />Archive</button></div></section></>;
+
+  return (
+    <div style={{ maxWidth: 840, margin: "0 auto" }}>
+      <VisualRecordEditor
+        kind={kind}
+        record={record}
+        values={values}
+        onChangeValues={setValues}
+        onSave={save}
+        onTransition={transition}
+        status={status}
+        message={message}
+        onClose={() => navigate(`/content/${rawKind}`)}
+      />
+    </div>
+  );
+}
+
+function slugify(text: string): string {
+  return text.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/[\s_-]+/g, "-").replace(/^-+|-+$/g, "");
+}
+
+function getDefaultValuesForKind(kind: ContentKind): Record<string, any> {
+  switch (kind) {
+    case "EVENT":
+      return { title: "", slug: "", theme: "", venue: "", startAt: "", endAt: "", speakers: [], image: "", description: "", featured: false };
+    case "BRANCH":
+      return { name: "", slug: "", region: "Western", city: "", location: "", phone: "", email: "", description: "", image: "", order: 1 };
+    case "LEADER":
+      return { name: "", title: "", bio: "", portrait: "", order: 1 };
+    case "MINISTRY":
+      return { name: "", slug: "", audience: "", description: "", order: 1 };
+    case "MEDIA":
+      return { title: "", slug: "", type: "VIDEO", speaker: "", category: "Teaching", description: "", image: "", mediaUrl: "", featured: false };
+    case "PAGE":
+      return { title: "", slug: "", description: "", body: "" };
+    default:
+      return { title: "", slug: "", description: "" };
+  }
+}
+
+function VisualRecordEditor({
+  kind,
+  record,
+  values,
+  onChangeValues,
+  onSave,
+  onTransition,
+  status,
+  message,
+  onClose,
+}: {
+  kind: ContentKind;
+  record?: ContentRecord;
+  values: Record<string, any>;
+  onChangeValues: (newValues: Record<string, any>) => void;
+  onSave: (valuesToSave?: Record<string, any>) => Promise<void>;
+  onTransition: (operation: string, verb: string) => Promise<void>;
+  status: "loading" | "ready" | "saving" | "error";
+  message: string;
+  onClose?: () => void;
+}) {
+  const [editorMode, setEditorMode] = useState<"form" | "json">("form");
+  const [jsonText, setJsonText] = useState(JSON.stringify(values, null, 2));
+
+  useEffect(() => {
+    setJsonText(JSON.stringify(values, null, 2));
+  }, [values]);
+
+  function updateField(field: string, val: any) {
+    const updated = { ...values, [field]: val };
+    if ((field === "title" || field === "name") && typeof val === "string") {
+      if (!values.slug || values.slug === slugify(String(values.title || values.name || ""))) {
+        updated.slug = slugify(val);
+      }
+    }
+    onChangeValues(updated);
+  }
+
+  function handleJsonChange(raw: string) {
+    setJsonText(raw);
+    try {
+      const parsed = JSON.parse(raw);
+      onChangeValues(parsed);
+    } catch {
+      // Keep raw text until valid JSON
+    }
+  }
+
+  const isSaving = status === "saving";
+
+  return (
+    <div className="modal-dialog">
+      <header className="modal-header">
+        <div className="modal-header-title">
+          <Article />
+          <div>
+            <h2>{record ? `Edit ${kind.toLowerCase()}: ${recordLabel(record)}` : `Create new ${kind.toLowerCase()}`}</h2>
+            <p>Fill out the administrative fields below to manage this content.</p>
+          </div>
+        </div>
+        <div className="editor-mode-toggle">
+          <button className={editorMode === "form" ? "active" : ""} onClick={() => setEditorMode("form")}>Visual Form</button>
+          <button className={editorMode === "json" ? "active" : ""} onClick={() => setEditorMode("json")}>JSON Code</button>
+        </div>
+      </header>
+
+      <div className="modal-body">
+        {message && <div className={status === "error" ? "alert error" : "alert success"} role="status">{message}</div>}
+
+        {editorMode === "json" ? (
+          <div className="form-group">
+            <label>Raw JSON Data</label>
+            <textarea
+              className="json-editor"
+              value={jsonText}
+              onChange={(e) => handleJsonChange(e.target.value)}
+              spellCheck={false}
+            />
+          </div>
+        ) : (
+          <FormFieldsByKind kind={kind} values={values} updateField={updateField} />
+        )}
+      </div>
+
+      <footer className="modal-footer">
+        {onClose ? (
+          <button className="button secondary" onClick={onClose} disabled={isSaving}>Cancel</button>
+        ) : <div />}
+
+        <div className="modal-footer-actions">
+          {record && (
+            <>
+              <button className="button secondary" onClick={() => void onTransition(operations.publish, "Published")} disabled={isSaving}>Publish</button>
+              <button className="button danger" onClick={() => void onTransition(operations.archive, "Archived")} disabled={isSaving}><Archive />Archive</button>
+            </>
+          )}
+          <button className="button primary" onClick={() => void onSave(values)} disabled={isSaving}>
+            {isSaving ? <><SpinnerGap className="spin" /> Saving…</> : "Save draft"}
+          </button>
+        </div>
+      </footer>
+    </div>
+  );
+}
+
+function FormFieldsByKind({
+  kind,
+  values,
+  updateField,
+}: {
+  kind: ContentKind;
+  values: Record<string, any>;
+  updateField: (field: string, val: any) => void;
+}) {
+  switch (kind) {
+    case "EVENT":
+      return (
+        <div className="form-grid">
+          <div className="form-group span-2">
+            <label>Event Title <span className="required">*</span></label>
+            <input className="form-control" value={values.title || ""} onChange={(e) => updateField("title", e.target.value)} placeholder="e.g. RFMC 2026 Conference" required />
+          </div>
+
+          <div className="form-group">
+            <label>URL Slug <span className="required">*</span></label>
+            <input className="form-control" value={values.slug || ""} onChange={(e) => updateField("slug", e.target.value)} placeholder="rfmc-2026" required />
+          </div>
+
+          <div className="form-group">
+            <label>Theme</label>
+            <input className="form-control" value={values.theme || ""} onChange={(e) => updateField("theme", e.target.value)} placeholder="e.g. FIGHT THE GOOD FIGHT!" />
+          </div>
+
+          <div className="form-group">
+            <label>Start Date & Time</label>
+            <input className="form-control" type="datetime-local" value={formatDatetimeLocal(values.startAt)} onChange={(e) => updateField("startAt", e.target.value ? new Date(e.target.value).toISOString() : "")} />
+          </div>
+
+          <div className="form-group">
+            <label>End Date & Time</label>
+            <input className="form-control" type="datetime-local" value={formatDatetimeLocal(values.endAt)} onChange={(e) => updateField("endAt", e.target.value ? new Date(e.target.value).toISOString() : "")} />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Venue / Location</label>
+            <input className="form-control" value={values.venue || ""} onChange={(e) => updateField("venue", e.target.value)} placeholder="e.g. Church Auditorium, Mpintsin New Site" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Speakers (comma separated)</label>
+            <input className="form-control" value={Array.isArray(values.speakers) ? values.speakers.join(", ") : (values.speakers || "")} onChange={(e) => updateField("speakers", e.target.value.split(",").map(s => s.trim()))} placeholder="e.g. Pastor David Komlagah, Rev. Bernard Boayeg" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Featured Image URL</label>
+            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/rfmc-worship.png or Cloudflare R2 URL" />
+            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
+          </div>
+
+          <div className="form-group span-2">
+            <label>Event Description</label>
+            <textarea className="form-textarea" value={values.description || ""} onChange={(e) => updateField("description", e.target.value)} placeholder="Full details about this event..." />
+          </div>
+
+          <div className="form-group span-2">
+            <label className="form-checkbox-group">
+              <input type="checkbox" checked={!!values.featured} onChange={(e) => updateField("featured", e.target.checked)} />
+              <span>Feature this event on the homepage banner</span>
+            </label>
+          </div>
+        </div>
+      );
+
+    case "BRANCH":
+      return (
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Branch Name <span className="required">*</span></label>
+            <input className="form-control" value={values.name || ""} onChange={(e) => updateField("name", e.target.value)} placeholder="e.g. Western Regional Branch" required />
+          </div>
+
+          <div className="form-group">
+            <label>URL Slug <span className="required">*</span></label>
+            <input className="form-control" value={values.slug || ""} onChange={(e) => updateField("slug", e.target.value)} placeholder="western-regional-takoradi" required />
+          </div>
+
+          <div className="form-group">
+            <label>Region</label>
+            <select className="form-select" value={values.region || "Western"} onChange={(e) => updateField("region", e.target.value)}>
+              <option value="Western">Western Region</option>
+              <option value="Greater Accra">Greater Accra Region</option>
+              <option value="Ashanti">Ashanti Region</option>
+              <option value="Central">Central Region</option>
+              <option value="Eastern">Eastern Region</option>
+              <option value="Volta">Volta Region</option>
+              <option value="Northern">Northern Region</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>City / Town</label>
+            <input className="form-control" value={values.city || ""} onChange={(e) => updateField("city", e.target.value)} placeholder="e.g. Takoradi" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Physical Address / Location</label>
+            <input className="form-control" value={values.location || ""} onChange={(e) => updateField("location", e.target.value)} placeholder="e.g. Mpintsin New Site, High Tension Down" />
+          </div>
+
+          <div className="form-group">
+            <label>Contact Phone</label>
+            <input className="form-control" value={values.phone || ""} onChange={(e) => updateField("phone", e.target.value)} placeholder="+233..." />
+          </div>
+
+          <div className="form-group">
+            <label>Contact Email</label>
+            <input className="form-control" type="email" value={values.email || ""} onChange={(e) => updateField("email", e.target.value)} placeholder="branch@pcfs.org" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Branch Photo URL</label>
+            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/Takoradi-branch.jpeg" />
+            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
+          </div>
+
+          <div className="form-group span-2">
+            <label>Branch Description</label>
+            <textarea className="form-textarea" value={values.description || ""} onChange={(e) => updateField("description", e.target.value)} placeholder="Overview of services and community..." />
+          </div>
+        </div>
+      );
+
+    case "LEADER":
+      return (
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Leader Name <span className="required">*</span></label>
+            <input className="form-control" value={values.name || ""} onChange={(e) => updateField("name", e.target.value)} placeholder="e.g. Rev. David Komlagah" required />
+          </div>
+
+          <div className="form-group">
+            <label>Title / Position <span className="required">*</span></label>
+            <input className="form-control" value={values.title || ""} onChange={(e) => updateField("title", e.target.value)} placeholder="e.g. Head Pastor, Takoradi Branch" required />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Portrait Photo URL</label>
+            <input className="form-control" value={values.portrait || values.image || ""} onChange={(e) => updateField("portrait", e.target.value)} placeholder="/images/Rev-David.jpeg" />
+            {(values.portrait || values.image) && <div className="img-preview-box"><img src={values.portrait || values.image} alt="Preview" /><span>{values.portrait || values.image}</span></div>}
+          </div>
+
+          <div className="form-group span-2">
+            <label>Biography</label>
+            <textarea className="form-textarea" value={values.bio || ""} onChange={(e) => updateField("bio", e.target.value)} placeholder="Leader biography and ministry journey..." />
+          </div>
+        </div>
+      );
+
+    case "MINISTRY":
+      return (
+        <div className="form-grid">
+          <div className="form-group">
+            <label>Ministry Name <span className="required">*</span></label>
+            <input className="form-control" value={values.name || ""} onChange={(e) => updateField("name", e.target.value)} placeholder="e.g. Kiddie Ministry International" required />
+          </div>
+
+          <div className="form-group">
+            <label>URL Slug <span className="required">*</span></label>
+            <input className="form-control" value={values.slug || ""} onChange={(e) => updateField("slug", e.target.value)} placeholder="kiddie-ministry" required />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Target Audience / Age Group</label>
+            <input className="form-control" value={values.audience || ""} onChange={(e) => updateField("audience", e.target.value)} placeholder="e.g. Ages 1–5" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Ministry Description</label>
+            <textarea className="form-textarea" value={values.description || ""} onChange={(e) => updateField("description", e.target.value)} placeholder="Ministry goals, activities, and vision..." />
+          </div>
+        </div>
+      );
+
+    case "MEDIA":
+      return (
+        <div className="form-grid">
+          <div className="form-group span-2">
+            <label>Media Title <span className="required">*</span></label>
+            <input className="form-control" value={values.title || ""} onChange={(e) => updateField("title", e.target.value)} placeholder="e.g. Growing Through Sound Doctrine" required />
+          </div>
+
+          <div className="form-group">
+            <label>URL Slug <span className="required">*</span></label>
+            <input className="form-control" value={values.slug || ""} onChange={(e) => updateField("slug", e.target.value)} placeholder="growing-through-sound-doctrine" required />
+          </div>
+
+          <div className="form-group">
+            <label>Media Type</label>
+            <select className="form-select" value={values.type || "VIDEO"} onChange={(e) => updateField("type", e.target.value)}>
+              <option value="VIDEO">Video Teaching</option>
+              <option value="AUDIO">Audio Sermon</option>
+              <option value="ARTICLE">Article / Publication</option>
+            </select>
+          </div>
+
+          <div className="form-group">
+            <label>Speaker / Preacher</label>
+            <input className="form-control" value={values.speaker || ""} onChange={(e) => updateField("speaker", e.target.value)} placeholder="e.g. PCFS Teaching Ministry" />
+          </div>
+
+          <div className="form-group">
+            <label>Category</label>
+            <input className="form-control" value={values.category || ""} onChange={(e) => updateField("category", e.target.value)} placeholder="e.g. Teaching / Sermon" />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Cover Thumbnail URL</label>
+            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/featured-teaching.png" />
+            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
+          </div>
+
+          <div className="form-group span-2">
+            <label>Media File / Stream URL</label>
+            <input className="form-control" value={values.mediaUrl || ""} onChange={(e) => updateField("mediaUrl", e.target.value)} placeholder="https://..." />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Summary / Description</label>
+            <textarea className="form-textarea" value={values.description || ""} onChange={(e) => updateField("description", e.target.value)} placeholder="Overview of message..." />
+          </div>
+
+          <div className="form-group span-2">
+            <label className="form-checkbox-group">
+              <input type="checkbox" checked={!!values.featured} onChange={(e) => updateField("featured", e.target.checked)} />
+              <span>Feature on media homepage section</span>
+            </label>
+          </div>
+        </div>
+      );
+
+    default:
+      return (
+        <div className="form-grid">
+          <div className="form-group span-2">
+            <label>Title / Name <span className="required">*</span></label>
+            <input className="form-control" value={values.title || values.name || ""} onChange={(e) => updateField(values.title !== undefined ? "title" : "name", e.target.value)} placeholder="Title" required />
+          </div>
+
+          {values.slug !== undefined && (
+            <div className="form-group span-2">
+              <label>URL Slug <span className="required">*</span></label>
+              <input className="form-control" value={values.slug || ""} onChange={(e) => updateField("slug", e.target.value)} placeholder="slug" required />
+            </div>
+          )}
+
+          <div className="form-group span-2">
+            <label>Description / Content</label>
+            <textarea className="form-textarea" value={values.description || values.body || ""} onChange={(e) => updateField(values.description !== undefined ? "description" : "body", e.target.value)} placeholder="Content details..." />
+          </div>
+        </div>
+      );
+  }
+}
+
+function formatDatetimeLocal(isoStr?: string): string {
+  if (!isoStr) return "";
+  try {
+    const d = new Date(isoStr);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  } catch {
+    return "";
+  }
 }
 
 function SubmissionDetail({ record, status, message, accessToken }: { record?: ContentRecord; status: string; message: string; accessToken?: string }) {
+
   const [result, setResult] = useState(message);
   if (status === "loading") return <InlineStatus label="Loading enquiry…" />;
   if (!record) return <div className="alert error">{message || "Enquiry not found"}</div>;
@@ -88,7 +681,7 @@ function SubmissionDetail({ record, status, message, accessToken }: { record?: C
 function PageTitle({ eyebrow, title, description, action }: { eyebrow: string; title: string; description: string; action?: React.ReactNode }) { return <header className="page-title"><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{action}</header>; }
 function FullScreenStatus({ label }: { label: string }) { return <main className="full-status"><SpinnerGap className="spin" /><p>{label}</p></main>; }
 function InlineStatus({ label }: { label: string }) { return <div className="inline-status" role="status"><SpinnerGap className="spin" />{label}</div>; }
-function EmptyState({ kind, editable, href }: { kind: string; editable: boolean; href: string }) { return <section className="empty-state"><Sparkle weight="duotone" /><h2>No {kind.toLowerCase()} found</h2><p>{editable ? "Create the first record or adjust your search." : "New submissions will appear here automatically."}</p>{editable && <Link className="button primary" to={href}>Create new</Link>}</section>; }
+function EmptyState({ kind, editable, href, onClickCreate }: { kind: string; editable: boolean; href?: string; onClickCreate?: () => void }) { return <section className="empty-state"><Sparkle weight="duotone" /><h2>No {kind.toLowerCase()} found</h2><p>{editable ? "Create the first record or adjust your search." : "New submissions will appear here automatically."}</p>{editable && (onClickCreate ? <button className="button primary" onClick={onClickCreate}>Create new</button> : <Link className="button primary" to={href || "#"}>Create new</Link>)}</section>; }
 function recordLabel(record?: ContentRecord): string { if (!record) return "Loading…"; const values = record.values; return String(values.title ?? values.name ?? values.reference ?? values.email ?? "Untitled record"); }
 function recordSecondary(record: ContentRecord): string { return String(record.values.slug ?? record.values.region ?? record.values.notificationStatus ?? record.kind.replaceAll("_", " ")); }
 function formatDate(value?: string): string { return value ? new Intl.DateTimeFormat("en-GB", { day: "numeric", month: "short", year: "numeric" }).format(new Date(value)) : "—"; }
