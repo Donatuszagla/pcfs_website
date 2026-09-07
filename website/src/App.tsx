@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { SiteShell } from "./components/SiteShell";
+import { loadSiteData } from "./data";
 import { AboutPage } from "./pages/AboutPage";
 import { BranchDetailPage } from "./pages/BranchDetailPage";
 import { BranchesPage } from "./pages/BranchesPage";
@@ -17,7 +19,14 @@ export interface AppProps {
   data: SiteData;
 }
 
-export function App({ data }: AppProps) {
+export function App({ data: initialData }: AppProps) {
+  const [data, setData] = useState<SiteData>(initialData);
+
+  useEffect(() => {
+    loadSiteData()
+      .then((latest) => setData(latest))
+      .catch(() => undefined);
+  }, []);
   return (
     <SiteShell data={data}>
       <Routes>

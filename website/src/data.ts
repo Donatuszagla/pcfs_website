@@ -150,13 +150,15 @@ export const fallbackSiteData: SiteData = {
 const PUBLIC_SITE_QUERY = `query PublicSite { publicSite { settings { name shortName description vision mission contactEmail contactPhone socialLinks { label url } } branches { id name slug region city location description serviceTimes phone directionsUrl image imageIsPlaceholder status } events { id title slug theme description startAt endAt venue speakers registrationUrl image featured status } media { id title slug type speaker category description publishedAt externalUrl image featured status } leaders { id name title bio portrait status } ministries { id name slug audience description status } } }`;
 
 /** Loads published CMS content and falls back to the approved seed content when the API is unavailable. */
-export async function loadSiteData(apiUrl = process.env.API_URL ?? "http://localhost:4000/graphql"): Promise<SiteData> {
+export async function loadSiteData(apiUrl?: string): Promise<SiteData> {
+  const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
+  const resolvedUrl = apiUrl || metaEnv?.VITE_API_URL || (typeof process !== "undefined" && process.env?.API_URL) || "http://localhost:4000/graphql";
   try {
-    const response = await fetch(apiUrl, {
+    const response = await fetch(resolvedUrl, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ query: PUBLIC_SITE_QUERY }),
-      signal: AbortSignal.timeout(2500),
+      signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) return fallbackSiteData;
     const payload = (await response.json()) as { data?: { publicSite?: Partial<SiteData> } };

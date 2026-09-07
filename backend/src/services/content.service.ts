@@ -7,6 +7,16 @@ const registry: Record<ContentKind, Model<any>> = {
   PAGE: PageModel, LEADER: LeaderModel, BRANCH: BranchModel, MINISTRY: MinistryModel, EVENT: EventModel, MEDIA: MediaModel, MEDIA_CATEGORY: MediaCategoryModel, SITE_SETTINGS: SiteSettingsModel, SUBMISSION: FormSubmissionModel, USER: UserModel,
 };
 
+/** Helper to ensure lean Mongoose documents expose string `id` for GraphQL resolvers */
+function mapDoc<T extends Record<string, unknown>>(doc: T | null): (T & { id: string }) | null {
+  if (!doc) return null;
+  return { ...doc, id: String(doc.id ?? doc._id ?? "") };
+}
+
+function mapDocs<T extends Record<string, unknown>>(docs: T[]): (T & { id: string })[] {
+  return docs.map((doc) => mapDoc(doc)!);
+}
+
 /** Loads published content for the public website in one stable payload. */
 export async function getPublicSite(): Promise<Record<string, unknown>> {
   const [settings, pages, branches, events, media, leaders, ministries] = await Promise.all([
@@ -18,7 +28,15 @@ export async function getPublicSite(): Promise<Record<string, unknown>> {
     LeaderModel.find({ status: "PUBLISHED" }).sort({ order: 1 }).lean(),
     MinistryModel.find({ status: "PUBLISHED" }).sort({ order: 1 }).lean(),
   ]);
-  return { settings, pages, branches, events, media, leaders, ministries };
+  return {
+    settings: mapDoc(settings as Record<string, unknown> | null),
+    pages: mapDocs(pages as Record<string, unknown>[]),
+    branches: mapDocs(branches as Record<string, unknown>[]),
+    events: mapDocs(events as Record<string, unknown>[]),
+    media: mapDocs(media as Record<string, unknown>[]),
+    leaders: mapDocs(leaders as Record<string, unknown>[]),
+    ministries: mapDocs(ministries as Record<string, unknown>[]),
+  };
 }
 
 /** Lists CMS records for a permitted domain with bounded pagination and optional text search. */
