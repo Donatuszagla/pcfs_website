@@ -7,6 +7,11 @@ const endpoint = import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql"
 
 export async function graphqlRequest<T>(query: string, variables?: Record<string, unknown>, accessToken?: string): Promise<T> {
   const response = await fetch(endpoint, { method: "POST", credentials: "include", headers: { "content-type": "application/json", ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ query, variables }) });
+  const contentType = response.headers.get("content-type");
+  if (!contentType || !contentType.includes("application/json")) {
+    const text = await response.text();
+    throw new Error(`API error (${response.status}): Expected JSON response from ${endpoint}, received HTML/text instead. Check VITE_API_URL.`);
+  }
   const body = await response.json() as { data?: T; errors?: { message: string }[] };
   if (!response.ok || body.errors?.length) throw new Error(body.errors?.[0]?.message ?? `Request failed (${response.status})`);
   if (!body.data) throw new Error("The API returned no data");
