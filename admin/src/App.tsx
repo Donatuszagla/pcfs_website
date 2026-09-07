@@ -1,5 +1,5 @@
-import { Archive, Article, Buildings, CalendarDots, CaretRight, Church, EnvelopeSimple, ImageSquare, List, SignOut, Sparkle, SpinnerGap, UsersThree, X } from "@phosphor-icons/react";
-import { useEffect, useState, type FormEvent } from "react";
+import { Archive, Article, Buildings, CalendarDots, CaretRight, Church, CloudArrowUp, EnvelopeSimple, ImageSquare, List, SignOut, Sparkle, SpinnerGap, UsersThree, X } from "@phosphor-icons/react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "./auth";
 import { graphqlRequest, operations, type ContentKind, type ContentRecord } from "./graphql";
@@ -399,6 +399,137 @@ function VisualRecordEditor({
   );
 }
 
+async function uploadImage(file: File, alt: string, accessToken?: string): Promise<{ url: string; alt: string }> {
+  const baseApi = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql").replace(/\/graphql\/?$/, "");
+  const uploadEndpoint = `${baseApi}/api/uploads`;
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("alt", alt || file.name);
+
+  const response = await fetch(uploadEndpoint, {
+    method: "POST",
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({ error: "Upload failed" }));
+    throw new Error(errJson.error || `Upload failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  return { url: data.asset.url, alt: data.asset.alt };
+}
+
+function FilePickerControl({
+  value,
+  onChange,
+  label,
+  accept = "image/jpeg,image/png,image/webp",
+  accessToken,
+  placeholder = "Upload image or enter URL...",
+}: {
+  value: string;
+  onChange: (url: string) => void;
+  label: string;
+  accept?: string;
+  accessToken?: string;
+  placeholder?: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const [error, setError] = useState("");
+  const [dragOver, setDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  async function handleFileSelect(file: File) {
+    if (!file) return;
+    setUploading(true);
+    setError("");
+    try {
+      const res = await uploadImage(file, file.name.replace(/\.[^/.]+$/, ""), accessToken);
+      onChange(res.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload file");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="form-group span-2">
+      <label>{label}</label>
+
+      {value ? (
+        <div className="file-preview-card">
+          <img src={value} alt="Uploaded media preview" onError={(e) => (e.currentTarget.style.display = "none")} />
+          <div className="file-preview-info">
+            <span className="file-preview-url">{value}</span>
+            <small>✓ Asset uploaded & stored on Cloudflare R2</small>
+          </div>
+          <div className="file-preview-actions">
+            <button type="button" className="button secondary micro" onClick={() => fileInputRef.current?.click()}>
+              Replace file
+            </button>
+            <button type="button" className="button danger micro" onClick={() => onChange("")}>
+              Remove
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div
+          className={`file-dropzone ${dragOver ? "drag-over" : ""} ${uploading ? "uploading" : ""}`}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+          onDragLeave={() => setDragOver(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragOver(false);
+            if (e.dataTransfer.files?.[0]) handleFileSelect(e.dataTransfer.files[0]);
+          }}
+          onClick={() => fileInputRef.current?.click()}
+        >
+          {uploading ? (
+            <div className="dropzone-state">
+              <SpinnerGap className="spin dropzone-icon" />
+              <span>Uploading to Cloudflare R2...</span>
+            </div>
+          ) : (
+            <div className="dropzone-state">
+              <CloudArrowUp className="dropzone-icon" />
+              <div>
+                <strong>Click to choose a file or drag & drop here</strong>
+                <p>Uploads directly to Cloudflare R2 (JPEG, PNG, WebP up to 10 MB)</p>
+              </div>
+              <button type="button" className="button secondary micro">Browse file</button>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <div className="alert error micro" role="alert">{error}</div>}
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={accept}
+        style={{ display: "none" }}
+        onChange={(e) => e.target.files?.[0] && handleFileSelect(e.target.files[0])}
+      />
+
+      <details className="url-fallback-details">
+        <summary>Or paste direct URL</summary>
+        <input
+          className="form-control"
+          value={value || ""}
+          onChange={(e) => onChange(e.target.value)}
+          placeholder={placeholder}
+        />
+      </details>
+    </div>
+  );
+}
+
 function FormFieldsByKind({
   kind,
   values,
@@ -408,6 +539,7 @@ function FormFieldsByKind({
   values: Record<string, any>;
   updateField: (field: string, val: any) => void;
 }) {
+  const { accessToken } = useAuth();
   switch (kind) {
     case "EVENT":
       return (
@@ -447,11 +579,12 @@ function FormFieldsByKind({
             <input className="form-control" value={Array.isArray(values.speakers) ? values.speakers.join(", ") : (values.speakers || "")} onChange={(e) => updateField("speakers", e.target.value.split(",").map(s => s.trim()))} placeholder="e.g. Pastor David Komlagah, Rev. Bernard Boayeg" />
           </div>
 
-          <div className="form-group span-2">
-            <label>Featured Image URL</label>
-            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/rfmc-worship.png or Cloudflare R2 URL" />
-            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
-          </div>
+          <FilePickerControl
+            label="Featured Event Image"
+            value={values.image || ""}
+            onChange={(url) => updateField("image", url)}
+            accessToken={accessToken}
+          />
 
           <div className="form-group span-2">
             <label>Event Description</label>
@@ -513,11 +646,12 @@ function FormFieldsByKind({
             <input className="form-control" type="email" value={values.email || ""} onChange={(e) => updateField("email", e.target.value)} placeholder="branch@pcfs.org" />
           </div>
 
-          <div className="form-group span-2">
-            <label>Branch Photo URL</label>
-            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/Takoradi-branch.jpeg" />
-            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
-          </div>
+          <FilePickerControl
+            label="Branch Photo"
+            value={values.image || ""}
+            onChange={(url) => updateField("image", url)}
+            accessToken={accessToken}
+          />
 
           <div className="form-group span-2">
             <label>Branch Description</label>
@@ -539,11 +673,12 @@ function FormFieldsByKind({
             <input className="form-control" value={values.title || ""} onChange={(e) => updateField("title", e.target.value)} placeholder="e.g. Head Pastor, Takoradi Branch" required />
           </div>
 
-          <div className="form-group span-2">
-            <label>Portrait Photo URL</label>
-            <input className="form-control" value={values.portrait || values.image || ""} onChange={(e) => updateField("portrait", e.target.value)} placeholder="/images/Rev-David.jpeg" />
-            {(values.portrait || values.image) && <div className="img-preview-box"><img src={values.portrait || values.image} alt="Preview" /><span>{values.portrait || values.image}</span></div>}
-          </div>
+          <FilePickerControl
+            label="Leader Portrait Photo"
+            value={values.portrait || values.image || ""}
+            onChange={(url) => { updateField("portrait", url); updateField("image", url); }}
+            accessToken={accessToken}
+          />
 
           <div className="form-group span-2">
             <label>Biography</label>
@@ -609,16 +744,21 @@ function FormFieldsByKind({
             <input className="form-control" value={values.category || ""} onChange={(e) => updateField("category", e.target.value)} placeholder="e.g. Teaching / Sermon" />
           </div>
 
-          <div className="form-group span-2">
-            <label>Cover Thumbnail URL</label>
-            <input className="form-control" value={values.image || ""} onChange={(e) => updateField("image", e.target.value)} placeholder="/images/featured-teaching.png" />
-            {values.image && <div className="img-preview-box"><img src={values.image} alt="Preview" /><span>{values.image}</span></div>}
-          </div>
+          <FilePickerControl
+            label="Cover Thumbnail Image"
+            value={values.image || ""}
+            onChange={(url) => updateField("image", url)}
+            accessToken={accessToken}
+          />
 
-          <div className="form-group span-2">
-            <label>Media File / Stream URL</label>
-            <input className="form-control" value={values.mediaUrl || ""} onChange={(e) => updateField("mediaUrl", e.target.value)} placeholder="https://..." />
-          </div>
+          <FilePickerControl
+            label="Media Audio / Video File"
+            value={values.mediaUrl || ""}
+            onChange={(url) => updateField("mediaUrl", url)}
+            accept="audio/*,video/*,application/pdf"
+            accessToken={accessToken}
+            placeholder="Upload or paste media stream URL..."
+          />
 
           <div className="form-group span-2">
             <label>Summary / Description</label>

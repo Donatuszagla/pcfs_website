@@ -141,6 +141,27 @@ a { color: inherit; text-decoration: none; }
 .editor-mode-toggle button { height: 32px; padding: 0 .8rem; border-radius: 7px; border: 0; background: none; font-size: .78rem; font-weight: 700; color: var(--muted); cursor: pointer; transition: all .15s ease; }
 .editor-mode-toggle button.active { background: white; color: var(--blue); box-shadow: 0 2px 6px rgba(17,60,167,.12); }
 
+/* File Picker & Media Dropzone */
+.button.micro { min-height: 32px; padding: 0 .7rem; font-size: .78rem; border-radius: 7px; }
+.file-dropzone { border: 2px dashed #c4d2eb; border-radius: 14px; background: #f8faff; padding: 1.5rem; text-align: center; cursor: pointer; transition: all .2s ease; }
+.file-dropzone:hover, .file-dropzone.drag-over { border-color: var(--blue); background: #edf3ff; }
+.file-dropzone.uploading { opacity: .75; cursor: wait; border-color: var(--blue); }
+.dropzone-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: .6rem; }
+.dropzone-icon { font-size: 2.2rem; color: var(--blue); }
+.dropzone-state strong { font-size: .9rem; color: var(--ink); display: block; }
+.dropzone-state p { margin: 0; font-size: .78rem; color: var(--muted); }
+.file-preview-card { display: flex; align-items: center; gap: 1rem; padding: .8rem 1rem; border: 1px solid var(--line); border-radius: 12px; background: #f8faff; }
+.file-preview-card img { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 1px solid var(--line); background: white; flex-shrink: 0; }
+.file-preview-info { min-width: 0; flex: 1; display: flex; flex-direction: column; gap: .2rem; }
+.file-preview-url { font-size: .82rem; font-weight: 700; color: var(--ink); word-break: break-all; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+.file-preview-info small { color: #207046; font-weight: 700; font-size: .7rem; }
+.file-preview-actions { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.url-fallback-details { margin-top: .4rem; font-size: .78rem; color: var(--muted); }
+.url-fallback-details summary { cursor: pointer; font-weight: 600; padding: .2rem 0; }
+.url-fallback-details input { margin-top: .4rem; }
+.alert.micro { margin-top: .4rem; margin-bottom: 0; padding: .5rem .8rem; font-size: .78rem; }
+
+
 
 @media (max-width: 1000px) {
   .stat-grid { grid-template-columns: 1fr 1fr; }
