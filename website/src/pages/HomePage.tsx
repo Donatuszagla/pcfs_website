@@ -29,7 +29,7 @@ export function HomePage({ data }: HomePageProps) {
           </div>
           <img
             src={featuredEvent.image}
-            alt="Temporary event photography of a congregation worshipping"
+            alt="Paradise City of Faith Sanctuary worship event"
           />
         </section>
       )}
@@ -103,8 +103,7 @@ export function HomePage({ data }: HomePageProps) {
           <article>
             <h2>Our Branches</h2>
             <Link className="image-card" to={`/branches/${featuredBranch.slug}`}>
-              <img src={featuredBranch.image} alt="Temporary branch building photography" />
-              <span className="temporary-label">Temporary image</span>
+              <img src={featuredBranch.image} alt="Paradise City of Faith Sanctuary branch location" />
             </Link>
             <p>Find a Paradise City of Faith Sanctuary branch near you and connect with a thriving community.</p>
             <Link className="button button-compact" to="/branches">
