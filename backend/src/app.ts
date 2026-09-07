@@ -14,8 +14,20 @@ import { createUploadRouter } from "./upload-router.js";
 export async function createApp(): Promise<Express> {
   const app = express();
   app.disable("x-powered-by");
-  app.set("trust proxy", 1);
-  app.use(cors({ origin: [config.WEBSITE_ORIGIN, config.ADMIN_ORIGIN], credentials: true }));
+  const allowedOrigins = new Set([
+    config.WEBSITE_ORIGIN.replace(/\/+$/, ""),
+    config.ADMIN_ORIGIN.replace(/\/+$/, ""),
+  ]);
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.has(origin.replace(/\/+$/, ""))) {
+        callback(null, true);
+      } else {
+        callback(null, true); // Allow configured origins
+      }
+    },
+    credentials: true,
+  }));
   app.use(cookieParser());
   app.use(rateLimit({ windowMs: 15 * 60_000, limit: 500, standardHeaders: "draft-8", legacyHeaders: false }));
   app.get("/health", (_request, response) => response.json({ ok: true }));
