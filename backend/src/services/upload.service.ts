@@ -35,8 +35,18 @@ export async function storeImage(actor: Actor, file: Express.Multer.File, alt: s
 }
 
 async function ensureBucket(): Promise<void> {
-  if (!(await minio.bucketExists(config.MINIO_BUCKET))) await minio.makeBucket(config.MINIO_BUCKET);
-  await minio.setBucketPolicy(config.MINIO_BUCKET, JSON.stringify({ Version: "2012-10-17", Statement: [{ Effect: "Allow", Principal: { AWS: ["*"] }, Action: ["s3:GetObject"], Resource: [`arn:aws:s3:::${config.MINIO_BUCKET}/*`] }] }));
+  try {
+    if (!(await minio.bucketExists(config.MINIO_BUCKET))) {
+      await minio.makeBucket(config.MINIO_BUCKET);
+    }
+  } catch (error) {
+    // Bucket already exists or provider manages bucket lifecycle
+  }
+  try {
+    await minio.setBucketPolicy(config.MINIO_BUCKET, JSON.stringify({ Version: "2012-10-17", Statement: [{ Effect: "Allow", Principal: { AWS: ["*"] }, Action: ["s3:GetObject"], Resource: [`arn:aws:s3:::${config.MINIO_BUCKET}/*`] }] }));
+  } catch (error) {
+    // Bucket policy setting is optional or managed in Cloudflare Dashboard
+  }
 }
 
 function publicUrl(key: string): string { return `${config.PUBLIC_MEDIA_URL.replace(/\/$/, "")}/${key}`; }
