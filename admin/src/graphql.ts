@@ -6,7 +6,8 @@ export interface ContentRecord { id: string; kind: ContentKind; status?: string;
 const endpoint = import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql";
 
 export async function graphqlRequest<T>(query: string, variables?: Record<string, unknown>, accessToken?: string): Promise<T> {
-  const response = await fetch(endpoint, { method: "POST", credentials: "include", headers: { "content-type": "application/json", ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ query, variables }) });
+  const token = accessToken || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("pcfs_access_token") : null);
+  const response = await fetch(endpoint, { method: "POST", credentials: "include", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ query, variables }) });
   const contentType = response.headers.get("content-type");
   if (!contentType || !contentType.includes("application/json")) {
     const text = await response.text();

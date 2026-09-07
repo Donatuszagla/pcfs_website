@@ -160,7 +160,7 @@ export const resolvers = {
     },
     logout: async (_root: unknown, _args: unknown, context: GraphqlContext) => {
       await logout(context.request.cookies?.pcfs_refresh as string | undefined);
-      context.response.clearCookie("pcfs_refresh", { path: "/graphql" });
+      context.response.clearCookie("pcfs_refresh", { path: "/graphql", sameSite: "none", secure: true });
       return true;
     },
     submitContact: (_root: unknown, args: { data: unknown }) => submitContact(args.data),
@@ -183,7 +183,14 @@ function requireActor(context: GraphqlContext): Actor {
 }
 
 function setRefreshCookie(context: GraphqlContext, refreshToken: string): void {
-  context.response.cookie("pcfs_refresh", refreshToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "strict", path: "/graphql", maxAge: 7 * 86_400_000 });
+  const isProd = process.env.NODE_ENV === "production" || Boolean(context.request.header("x-forwarded-proto")?.includes("https"));
+  context.response.cookie("pcfs_refresh", refreshToken, {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
+    path: "/graphql",
+    maxAge: 7 * 86_400_000,
+  });
 }
 
 function toContentRecord(kind: ContentKind, value: unknown): Record<string, unknown> {

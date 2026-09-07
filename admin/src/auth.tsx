@@ -5,22 +5,59 @@ interface AuthContextValue { actor?: Actor; accessToken?: string; loading: boole
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [actor, setActor] = useState<Actor>();
-  const [accessToken, setAccessToken] = useState<string>();
+  const [actor, setActor] = useState<Actor | undefined>(() => {
+    try {
+      const stored = sessionStorage.getItem("pcfs_actor");
+      return stored ? (JSON.parse(stored) as Actor) : undefined;
+    } catch {
+      return undefined;
+    }
+  });
+  const [accessToken, setAccessToken] = useState<string | undefined>(() => sessionStorage.getItem("pcfs_access_token") || undefined);
   const [loading, setLoading] = useState(true);
 
+  const saveSession = (newActor: Actor, newToken: string) => {
+    setActor(newActor);
+    setAccessToken(newToken);
+    try {
+      sessionStorage.setItem("pcfs_actor", JSON.stringify(newActor));
+      sessionStorage.setItem("pcfs_access_token", newToken);
+    } catch {
+      // Session storage fallback
+    }
+  };
+
+  const clearSession = () => {
+    setActor(undefined);
+    setAccessToken(undefined);
+    try {
+      sessionStorage.removeItem("pcfs_actor");
+      sessionStorage.removeItem("pcfs_access_token");
+    } catch {
+      // Session storage fallback
+    }
+  };
+
   useEffect(() => {
-    graphqlRequest<{ refresh: { actor: Actor; accessToken: string } }>(operations.refresh)
-      .then(({ refresh }) => { setActor(refresh.actor); setAccessToken(refresh.accessToken); })
-      .catch(() => undefined)
+    graphqlRequest<{ refresh: { actor: Actor; accessToken: string } }>(operations.refresh, undefined, accessToken)
+      .then(({ refresh }) => { saveSession(refresh.actor, refresh.accessToken); })
+      .catch(() => {
+        // If refresh fails and token expired, clear invalid session
+        if (!accessToken) clearSession();
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
     const { login: result } = await graphqlRequest<{ login: { actor: Actor; accessToken: string } }>(operations.login, { data: { email, password } });
-    setActor(result.actor); setAccessToken(result.accessToken);
+    saveSession(result.actor, result.accessToken);
   }, []);
-  const logout = useCallback(async () => { await graphqlRequest(operations.logout, undefined, accessToken); setActor(undefined); setAccessToken(undefined); }, [accessToken]);
+
+  const logout = useCallback(async () => {
+    try { await graphqlRequest(operations.logout, undefined, accessToken); } catch {}
+    clearSession();
+  }, [accessToken]);
+
   const value = useMemo(() => ({ actor, accessToken, loading, login, logout }), [actor, accessToken, loading, login, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
