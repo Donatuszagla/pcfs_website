@@ -89,14 +89,12 @@ export function ContactPage({ data }: ContactPageProps) {
         <aside>
           <h2>Visit and connect</h2>
           <p>Official phone numbers, email addresses and service times are pending final approval.</p>
-          <p>
-            <MapPin aria-hidden />
-            Headquarters: Accra, Sapeiman-Zinga near Free Ridge School
-          </p>
-          <p>
-            <MapPin aria-hidden />
-            Western Regional Branch: Takoradi, Mpintsin New Site
-          </p>
+          {data.branches.map((branch) => (
+            <p key={branch.id}>
+              <MapPin aria-hidden />
+              <strong>{branch.name}:</strong> {branch.city}, {branch.location}
+            </p>
+          ))}
           {data.settings.contactEmail && (
             <a href={`mailto:${data.settings.contactEmail}`}>{data.settings.contactEmail}</a>
           )}

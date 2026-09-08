@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { HeroSlider } from "../components/HeroSlider";
 import { pillars } from "../constants/pillars";
 import type { SiteData } from "../types";
+import { formatDateRange } from "../utils/formatters";
 
 export interface HomePageProps {
   data: SiteData;
@@ -18,14 +19,14 @@ export function HomePage({ data }: HomePageProps) {
       {featuredEvent && (
         <section className="event-ribbon page-rail reveal" aria-labelledby="featured-event-title">
           <div className="event-badge">
-            RFMC
+            {featuredEvent.title.split(" ").slice(0, -1).join(" ") || featuredEvent.title}
             <br />
-            2026
+            {new Date(featuredEvent.startAt).getFullYear()}
           </div>
           <div>
             <span>Upcoming event</span>
             <h2 id="featured-event-title">{featuredEvent.theme}</h2>
-            <strong>18–20 September 2026</strong>
+            <strong>{formatDateRange(featuredEvent.startAt, featuredEvent.endAt)}</strong>
           </div>
           <img
             src={featuredEvent.image}
@@ -69,7 +70,7 @@ export function HomePage({ data }: HomePageProps) {
               <div key={leader.id}>
                 <span>
                   <img
-                    src={leader.portrait ?? leader.image ?? "/images/logo-placeholder.png"}
+                    src={leader.portrait ?? leader.image ?? "/images/PCFS LOGO.png"}
                     alt={leader.name}
                   />
                 </span>

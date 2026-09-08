@@ -8,9 +8,30 @@ export interface EventsPageProps {
 }
 
 export function EventsPage({ events }: EventsPageProps) {
-  const now = new Date("2026-08-30T00:00:00+00:00");
-  const upcoming = events.filter((event) => new Date(event.endAt) >= now);
-  const past = events.filter((event) => new Date(event.endAt) < now);
+  const now = new Date();
+  /** An event is "upcoming/ongoing" when it has not yet ended.
+   *  Falls back to startAt when endAt is missing or clearly swapped (endAt < startAt). */
+  const upcoming = events.filter((event) => {
+    const end = event.endAt ? new Date(event.endAt) : null;
+    const start = event.startAt ? new Date(event.startAt) : null;
+    const validEnd = end && !isNaN(end.getTime()) ? end : null;
+    const validStart = start && !isNaN(start.getTime()) ? start : null;
+    // If endAt is before startAt, dates are likely swapped — use startAt
+    const effectiveEnd = validEnd && validStart && validEnd < validStart ? validStart : validEnd;
+    if (effectiveEnd) return effectiveEnd >= now;
+    if (validStart) return validStart >= now;
+    return true;
+  });
+  const past = events.filter((event) => {
+    const end = event.endAt ? new Date(event.endAt) : null;
+    const start = event.startAt ? new Date(event.startAt) : null;
+    const validEnd = end && !isNaN(end.getTime()) ? end : null;
+    const validStart = start && !isNaN(start.getTime()) ? start : null;
+    const effectiveEnd = validEnd && validStart && validEnd < validStart ? validStart : validEnd;
+    if (effectiveEnd) return effectiveEnd < now;
+    if (validStart) return validStart < now;
+    return false;
+  });
   return (
     <PageLayout
       eyebrow="Gather with us"
