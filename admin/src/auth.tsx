@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { graphqlRequest, operations, type Actor } from "./graphql";
+import { logger } from "./utils/logger";
 
 interface AuthContextValue { actor?: Actor; accessToken?: string; loading: boolean; login(email: string, password: string): Promise<void>; logout(): Promise<void> }
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -17,46 +18,65 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   const saveSession = (newActor: Actor, newToken: string) => {
+    logger.action(`User session saved: ${newActor.email} (${newActor.role})`);
     setActor(newActor);
     setAccessToken(newToken);
     try {
       sessionStorage.setItem("pcfs_actor", JSON.stringify(newActor));
       sessionStorage.setItem("pcfs_access_token", newToken);
-    } catch {
-      // Session storage fallback
+    } catch (err) {
+      logger.warn("SessionStorage", "Failed to store session tokens", err);
     }
   };
 
   const clearSession = () => {
+    logger.action("User session cleared");
     setActor(undefined);
     setAccessToken(undefined);
     try {
       sessionStorage.removeItem("pcfs_actor");
       sessionStorage.removeItem("pcfs_access_token");
-    } catch {
-      // Session storage fallback
+    } catch (err) {
+      logger.warn("SessionStorage", "Failed to clear session tokens", err);
     }
   };
 
   useEffect(() => {
+    logger.action("Restoring user session via refresh token...");
     graphqlRequest<{ refresh: { actor: Actor; accessToken: string } }>(operations.refresh, undefined, accessToken)
-      .then(({ refresh }) => { saveSession(refresh.actor, refresh.accessToken); })
+      .then(({ refresh }) => {
+        logger.success(`Session restored for ${refresh.actor.email}`);
+        saveSession(refresh.actor, refresh.accessToken);
+      })
       .catch(() => {
-        // If refresh fails and token expired, clear invalid session
+        logger.info("No active refresh session found or token expired");
         if (!accessToken) clearSession();
       })
       .finally(() => setLoading(false));
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { login: result } = await graphqlRequest<{ login: { actor: Actor; accessToken: string } }>(operations.login, { data: { email, password } });
-    saveSession(result.actor, result.accessToken);
+    logger.action(`Login attempt for: ${email}`);
+    try {
+      const { login: result } = await graphqlRequest<{ login: { actor: Actor; accessToken: string } }>(operations.login, { data: { email, password } });
+      logger.success(`Login successful for ${result.actor.email}`);
+      saveSession(result.actor, result.accessToken);
+    } catch (err) {
+      logger.error(`Login failed for ${email}`, err);
+      throw err;
+    }
   }, []);
 
   const logout = useCallback(async () => {
-    try { await graphqlRequest(operations.logout, undefined, accessToken); } catch {}
+    logger.action(`Logging out user ${actor?.email ?? ""}`);
+    try {
+      await graphqlRequest(operations.logout, undefined, accessToken);
+      logger.success("Logout confirmed by backend");
+    } catch (err) {
+      logger.warn("Logout", "Backend logout request failed, clearing local session anyway", err);
+    }
     clearSession();
-  }, [accessToken]);
+  }, [accessToken, actor]);
 
   const value = useMemo(() => ({ actor, accessToken, loading, login, logout }), [actor, accessToken, loading, login, logout]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

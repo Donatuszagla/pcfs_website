@@ -6,6 +6,14 @@ import { pathToFileURL } from "node:url";
 import { createServer as createViteServer, type ViteDevServer } from "vite";
 import { loadSiteData } from "./src/data.js";
 
+process.on("unhandledRejection", (reason) => {
+  console.error("[WEBSITE:FATAL] Unhandled Rejection:", reason);
+});
+
+process.on("uncaughtException", (error) => {
+  console.error("[WEBSITE:FATAL] Uncaught Exception:", error);
+});
+
 const root = process.cwd();
 const production = process.env.NODE_ENV === "production";
 const port = Number(readArg("--port") ?? process.env.PORT ?? 4173);
@@ -17,6 +25,22 @@ async function startServer(): Promise<void> {
   let vite: ViteDevServer | undefined;
   const siteUrl = (process.env.PUBLIC_SITE_URL ?? "https://pcfs.example").replace(/\/$/, "");
   app.use(compression());
+
+  // HTTP Request logger (filters out internal vite HMR requests)
+  app.use((request, response, next) => {
+    const start = Date.now();
+    response.on("finish", () => {
+      const url = request.originalUrl;
+      const isInternal = url.startsWith("/@") || url.startsWith("/node_modules") || url.includes(".vite/");
+      if (!isInternal) {
+        const duration = Date.now() - start;
+        const status = response.statusCode;
+        const log = status >= 400 ? console.error : console.log;
+        log(`[WEBSITE:HTTP] ${request.method} ${url} ${status} (${duration}ms)`);
+      }
+    });
+    next();
+  });
 
   if (!production) {
     vite = await createViteServer({ root, server: { middlewareMode: true }, appType: "custom" });
@@ -43,6 +67,7 @@ async function startServer(): Promise<void> {
       const serializedData = JSON.stringify(data).replace(/</g, "\\u003c");
       response.status(isKnownPath(url, data) ? 200 : 404).type("html").send(template.replace("<!--app-head-->", rendered.head).replace("<!--app-html-->", rendered.html).replace("<!--app-data-->", serializedData));
     } catch (error) {
+      console.error(`[WEBSITE:SSR_ERROR] Failed rendering route "${request.originalUrl}":`, error);
       vite?.ssrFixStacktrace(error as Error);
       next(error);
     }

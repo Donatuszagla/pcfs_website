@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, useLocation } from "react-router-dom";
 import { SiteShell } from "./components/SiteShell";
 import { loadSiteData } from "./data";
 import { AboutPage } from "./pages/AboutPage";
@@ -14,6 +14,7 @@ import { MediaPage } from "./pages/MediaPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { PolicyPage } from "./pages/PolicyPage";
 import type { SiteData } from "./types";
+import { logger } from "./utils/logger";
 
 export interface AppProps {
   data: SiteData;
@@ -21,12 +22,20 @@ export interface AppProps {
 
 export function App({ data: initialData }: AppProps) {
   const [data, setData] = useState<SiteData>(initialData);
+  const location = useLocation();
+
+  useEffect(() => {
+    logger.action(`Navigated to: ${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
 
   useEffect(() => {
     loadSiteData()
       .then((latest) => setData(latest))
-      .catch(() => undefined);
+      .catch((err) => {
+        logger.error("Failed refreshing site data on mount", err);
+      });
   }, []);
+
   return (
     <SiteShell data={data}>
       <Routes>

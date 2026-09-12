@@ -1,4 +1,5 @@
 import type { SiteData } from "./types.js";
+import { logger } from "./utils/logger.js";
 
 export const fallbackSiteData: SiteData = {
   settings: {
@@ -154,6 +155,7 @@ const PUBLIC_SITE_QUERY = `query PublicSite { publicSite { settings { name short
 export async function loadSiteData(apiUrl?: string): Promise<SiteData> {
   const metaEnv = (import.meta as unknown as { env?: Record<string, string> }).env;
   const resolvedUrl = apiUrl || metaEnv?.VITE_API_URL || (typeof process !== "undefined" && process.env?.API_URL) || "http://localhost:4000/graphql";
+  logger.data(`Fetching live site data from ${resolvedUrl}...`);
   try {
     const response = await fetch(resolvedUrl, {
       method: "POST",
@@ -161,10 +163,17 @@ export async function loadSiteData(apiUrl?: string): Promise<SiteData> {
       body: JSON.stringify({ query: PUBLIC_SITE_QUERY }),
       signal: AbortSignal.timeout(5000),
     });
-    if (!response.ok) return fallbackSiteData;
+    if (!response.ok) {
+      logger.warn("SiteData", `Backend returned HTTP ${response.status}. Using fallback seed dataset.`);
+      return fallbackSiteData;
+    }
     const payload = (await response.json()) as { data?: { publicSite?: Partial<SiteData> } };
     const siteData = payload.data?.publicSite;
-    if (!siteData) return fallbackSiteData;
+    if (!siteData) {
+      logger.warn("SiteData", "No publicSite payload in response. Using fallback seed dataset.");
+      return fallbackSiteData;
+    }
+    logger.success(`Live site data loaded (${siteData.branches?.length ?? 0} branches, ${siteData.events?.length ?? 0} events, ${siteData.media?.length ?? 0} media)`);
     return {
       ...fallbackSiteData,
       ...siteData,
@@ -175,7 +184,8 @@ export async function loadSiteData(apiUrl?: string): Promise<SiteData> {
       leaders: siteData.leaders?.length ? siteData.leaders : fallbackSiteData.leaders,
       ministries: siteData.ministries?.length ? siteData.ministries : fallbackSiteData.ministries,
     };
-  } catch {
+  } catch (error) {
+    logger.warn("SiteData", `Failed to reach live API (${error instanceof Error ? error.message : "Network error"}). Serving fallback site data.`);
     return fallbackSiteData;
   }
 }

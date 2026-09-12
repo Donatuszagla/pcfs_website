@@ -3,6 +3,7 @@ import { type FormEvent, useState } from "react";
 import { PageLayout } from "../components/PageLayout";
 import { TurnstileField } from "../components/TurnstileField";
 import type { SiteData } from "../types";
+import { logger } from "../utils/logger";
 
 export interface ContactPageProps {
   data: SiteData;
@@ -17,6 +18,7 @@ export function ContactPage({ data }: ContactPageProps) {
     setStatus("sending");
     const form = new FormData(event.currentTarget);
     const input = Object.fromEntries(form.entries());
+    logger.action(`Submitting contact form for: ${input.name || "Anonymous"} (${input.email || "No email"})`);
     try {
       const response = await fetch(import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql", {
         method: "POST",
@@ -27,13 +29,18 @@ export function ContactPage({ data }: ContactPageProps) {
         }),
       });
       const payload = (await response.json()) as {
-        data?: { submitContact?: { accepted: boolean } };
-        errors?: unknown[];
+        data?: { submitContact?: { accepted: boolean; reference?: string } };
+        errors?: { message?: string }[];
       };
-      if (!response.ok || !payload.data?.submitContact?.accepted) throw new Error("Submission failed");
+      if (!response.ok || !payload.data?.submitContact?.accepted) {
+        const errorMsg = payload.errors?.[0]?.message || "Submission failed";
+        throw new Error(errorMsg);
+      }
+      logger.success(`Contact form submission accepted (ref: ${payload.data.submitContact.reference ?? "n/a"})`);
       event.currentTarget.reset();
       setStatus("success");
-    } catch {
+    } catch (err) {
+      logger.error("Contact form submission error", err);
       setStatus("error");
     }
   }

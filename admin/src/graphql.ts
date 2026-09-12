@@ -1,3 +1,5 @@
+import { logger } from "./utils/logger";
+
 export type Role = "SUPER_ADMIN" | "CONTENT_ADMIN" | "MEDIA_MANAGER" | "EVENT_MANAGER";
 export type ContentKind = "PAGE" | "LEADER" | "BRANCH" | "MINISTRY" | "EVENT" | "MEDIA" | "MEDIA_CATEGORY" | "SITE_SETTINGS" | "SUBMISSION" | "USER";
 export interface Actor { id: string; email: string; role: Role }
@@ -5,18 +7,63 @@ export interface ContentRecord { id: string; kind: ContentKind; status?: string;
 
 const endpoint = import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql";
 
+function getOpName(query: string): string {
+  const match = query.match(/(query|mutation)\s+([A-Za-z0-9_]+)/i);
+  return match ? `${match[1].toUpperCase()} ${match[2]}` : "GRAPHQL REQUEST";
+}
+
 export async function graphqlRequest<T>(query: string, variables?: Record<string, unknown>, accessToken?: string): Promise<T> {
+  const opName = getOpName(query);
+  const start = performance.now();
+  logger.api(`--> ${opName}`, variables ? { variables } : "");
+
   const token = accessToken || (typeof sessionStorage !== "undefined" ? sessionStorage.getItem("pcfs_access_token") : null);
-  const response = await fetch(endpoint, { method: "POST", credentials: "include", headers: { "content-type": "application/json", ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify({ query, variables }) });
-  const contentType = response.headers.get("content-type");
-  if (!contentType || !contentType.includes("application/json")) {
-    const text = await response.text();
-    throw new Error(`API error (${response.status}): Expected JSON response from ${endpoint}, received HTML/text instead. Check VITE_API_URL.`);
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "content-type": "application/json",
+        ...(token ? { authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ query, variables }),
+    });
+
+    const contentType = response.headers?.get ? response.headers.get("content-type") : "application/json";
+    if (contentType && !contentType.includes("application/json")) {
+      const text = response.text ? await response.text() : "";
+      const err = new Error(`API error (${response.status}): Expected JSON response from ${endpoint}, received HTML/text instead. Check VITE_API_URL.`);
+      logger.error(`API response error in ${opName}`, err, { status: response.status, body: text.slice(0, 300) });
+      throw err;
+    }
+
+    const body = (await response.json()) as { data?: T; errors?: { message: string }[] };
+    const duration = Math.round(performance.now() - start);
+
+    if (!response.ok || body.errors?.length) {
+      const errorMsg = body.errors?.[0]?.message ?? `Request failed (${response.status})`;
+      const err = new Error(errorMsg) as Error & { logged?: boolean };
+      logger.error(`API execution failed for ${opName} (${duration}ms)`, err, { errors: body.errors, status: response.status });
+      err.logged = true;
+      throw err;
+    }
+
+    if (!body.data) {
+      const err = new Error("The API returned no data") as Error & { logged?: boolean };
+      logger.error(`Empty data received for ${opName} (${duration}ms)`, err);
+      err.logged = true;
+      throw err;
+    }
+
+    logger.api(`<-- ${opName} completed (${duration}ms)`);
+    return body.data;
+  } catch (error) {
+    const duration = Math.round(performance.now() - start);
+    if (!(error as { logged?: boolean })?.logged) {
+      logger.error(`Network or fetch error for ${opName} (${duration}ms)`, error);
+    }
+    throw error;
   }
-  const body = await response.json() as { data?: T; errors?: { message: string }[] };
-  if (!response.ok || body.errors?.length) throw new Error(body.errors?.[0]?.message ?? `Request failed (${response.status})`);
-  if (!body.data) throw new Error("The API returned no data");
-  return body.data;
 }
 
 export const operations = {
