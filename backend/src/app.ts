@@ -41,8 +41,16 @@ export async function createApp(): Promise<Express> {
 
   app.use((error: unknown, _request: express.Request, response: express.Response, _next: express.NextFunction) => {
     void _next;
+    if (error && typeof error === "object" && "name" in error && error.name === "MulterError") {
+      const multerError = error as { code?: string; message?: string };
+      if (multerError.code === "LIMIT_FILE_SIZE") {
+        return response.status(413).json({ error: "File exceeds maximum allowed size (10 MB for images, 200 MB for sermon audio)" });
+      }
+      return response.status(400).json({ error: multerError.message || "File upload error" });
+    }
     const message = error instanceof Error ? error.message : "Unexpected server error";
-    response.status(400).json({ error: message });
+    const status = message.includes("Only JPEG, PNG") || message.includes("Only audio files") ? 415 : 400;
+    response.status(status).json({ error: message });
   });
   return app;
 }

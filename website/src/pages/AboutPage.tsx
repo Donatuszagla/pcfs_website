@@ -25,7 +25,7 @@ export function AboutPage({ data }: AboutPageProps) {
         </article>
       </section>
       <section className="content-section">
-        <p className="eyebrow">What grounds us</p>
+        <p className="eyebrow man-vision">What grounds us</p>
         <h2>Our pillars</h2>
         <div className="compact-grid">
           {pillars.map(({ title, description, Icon }) => (
@@ -38,7 +38,7 @@ export function AboutPage({ data }: AboutPageProps) {
         </div>
       </section>
       <section id="leadership" className="content-section">
-        <p className="eyebrow">Leadership</p>
+        <p className="eyebrow man-vision">Leadership</p>
         <h2>Our spiritual heads</h2>
         <div className="leader-grid">
           {data.leaders.map((leader) => (
@@ -62,7 +62,7 @@ export function AboutPage({ data }: AboutPageProps) {
         </div>
       </section>
       <section className="content-section">
-        <p className="eyebrow">Growing generations</p>
+        <p className="eyebrow man-vision">Growing generations</p>
         <h2>Ministries</h2>
         <div className="compact-grid">
           {data.ministries.map((ministry) => (

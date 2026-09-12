@@ -36,12 +36,12 @@ export function HomePage({ data }: HomePageProps) {
       )}
       <section className="mandate-grid page-rail section-space reveal">
         <div>
-          <p className="eyebrow">Our mandate</p>
+          <p className="eyebrow man-vision">Our mandate</p>
           <h2>Raising people for Kingdom assignment</h2>
           <p>{data.settings.description}</p>
         </div>
         <div>
-          <p className="eyebrow">Our vision</p>
+          <p className="eyebrow man-vision">Our vision</p>
           <h2>Go and raise me a people</h2>
           <p>{data.settings.vision}</p>
         </div>

@@ -74,6 +74,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 
 .mandate-grid { display: grid; grid-template-columns: 1fr 1fr; }
 .mandate-grid > div { padding: 10px 64px; }
+.man-vision { background-color: black; width: fit-content; padding: 10px; border-radius: 10px;}
 .mandate-grid > div + div { border-left: 1px solid var(--line); }
 .mandate-grid h2, .content-section > h2, .page-content > h2 { font: 700 32px/1.15 "Manrope", sans-serif; color: var(--blue); margin: 0 0 20px; }
 .mandate-grid p:not(.eyebrow) { max-width: 52ch; line-height: 1.75; color: var(--muted); }
@@ -111,8 +112,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .leader-preview small { margin-top: 3px; color: #cdd5ff; }
 .leader-preview em { margin-top: 8px; color: var(--yellow); font-size: 11px; font-style: normal; text-transform: uppercase; letter-spacing: .05em; }
 
-.invitation { min-height: 330px; padding: 64px 0; display: grid; place-items: center; position: relative; isolation: isolate; text-align: center; color: white; background: url('/images/hero-congregation.png') center 74%/cover no-repeat; }
-.invitation::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(3, 22, 128, .92); }
+.invitation { min-height: 330px; padding: 64px 0; display: grid; place-items: center; position: relative; isolation: isolate; text-align: center; color: white; background: url('/images/8.jpg') center 74%/cover no-repeat; }
+.invitation::before { content: ""; position: absolute; inset: 0; z-index: -1; background: rgba(3, 22, 128, .82); }
 .invitation h2 { margin: 0 0 16px; font: 700 40px/1.1 "Manrope", sans-serif; }
 .invitation p { max-width: 620px; margin: 0 auto 28px; font-size: 18px; line-height: 1.65; }
 
@@ -169,7 +170,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .detail-grid > img { width: 100%; max-height: 520px; object-fit: cover; border-radius: 7px; box-shadow: 0 12px 32px rgba(6, 19, 91, 0.12); }
 .detail-grid p { display: flex; gap: 8px; align-items: flex-start; color: var(--muted); line-height: 1.7; }
 .detail-grid li { margin-block: 8px; }
-.notice { padding: 18px; color: #5e4c00 !important; background: #fff8c7; border-left: 4px solid var(--yellow); border-radius: 0 5px 5px 0; }
+.notice { padding: 18px; color: #5e4c00 !important; background: #fff8c7; border-radius: 5px 0 5px 0; }
 .subsection-heading { padding-top: 20px; }
 .empty-state { padding: 64px; text-align: center; background: var(--surface-soft); border-radius: 7px; }
 .empty-state svg { color: var(--blue); }

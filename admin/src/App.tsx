@@ -286,7 +286,7 @@ function getDefaultValuesForKind(kind: ContentKind): Record<string, any> {
     case "MINISTRY":
       return { name: "", slug: "", audience: "", description: "", order: 1 };
     case "MEDIA":
-      return { title: "", slug: "", type: "VIDEO", speaker: "", category: "Teaching", description: "", image: "", mediaUrl: "", featured: false };
+      return { title: "", slug: "", type: "VIDEO", speaker: "", category: "Teaching", description: "", image: "", externalUrl: "", mediaUrl: "", featured: false };
     case "PAGE":
       return { title: "", slug: "", description: "", body: "" };
     default:
@@ -399,12 +399,13 @@ function VisualRecordEditor({
   );
 }
 
-async function uploadImage(file: File, alt: string, accessToken?: string): Promise<{ url: string; alt: string }> {
+async function uploadMediaFile(file: File, alt: string, accessToken?: string): Promise<{ url: string; alt: string }> {
   const baseApi = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql").replace(/\/graphql\/?$/, "");
   const uploadEndpoint = `${baseApi}/api/uploads`;
   const formData = new FormData();
   formData.append("file", file);
-  formData.append("alt", alt || file.name);
+  const cleanAlt = (alt && alt.trim()) || file.name.replace(/\.[^/.]+$/, "").trim() || "Uploaded Asset";
+  formData.append("alt", cleanAlt);
 
   const response = await fetch(uploadEndpoint, {
     method: "POST",
@@ -427,7 +428,7 @@ function FilePickerControl({
   value,
   onChange,
   label,
-  accept = "image/jpeg,image/png,image/webp",
+  accept = "image/jpeg,image/png,image/webp,image/avif",
   accessToken,
   placeholder = "Upload image or enter URL...",
 }: {
@@ -443,12 +444,23 @@ function FilePickerControl({
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const isAudio = accept.includes("audio") || (!!value && /\.(mp3|m4a|wav|aac|ogg)(\?.*)?$/i.test(value));
+  const maxSizeBytes = isAudio ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
+  const maxSizeLabel = isAudio ? "200 MB" : "10 MB";
+
   async function handleFileSelect(file: File) {
     if (!file) return;
-    setUploading(true);
     setError("");
+
+    if (file.size > maxSizeBytes) {
+      setError(`File is too large (${(file.size / (1024 * 1024)).toFixed(1)} MB). Maximum allowed size is ${maxSizeLabel}.`);
+      return;
+    }
+
+    setUploading(true);
     try {
-      const res = await uploadImage(file, file.name.replace(/\.[^/.]+$/, ""), accessToken);
+      const cleanName = file.name.replace(/\.[^/.]+$/, "").trim() || "Asset";
+      const res = await uploadMediaFile(file, cleanName, accessToken);
       onChange(res.url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload file");
@@ -463,10 +475,18 @@ function FilePickerControl({
 
       {value ? (
         <div className="file-preview-card">
-          <img src={value} alt="Uploaded media preview" onError={(e) => (e.currentTarget.style.display = "none")} />
+          {isAudio ? (
+            <div style={{ padding: "0.5rem 0", width: "100%" }}>
+              <audio controls src={value} style={{ width: "100%", display: "block" }}>
+                Your browser does not support the audio element.
+              </audio>
+            </div>
+          ) : (
+            <img src={value} alt="Uploaded media preview" onError={(e) => (e.currentTarget.style.display = "none")} />
+          )}
           <div className="file-preview-info">
             <span className="file-preview-url">{value}</span>
-            <small>✓ Asset uploaded & stored on Cloudflare R2</small>
+            <small>✓ Asset stored on Cloudflare R2</small>
           </div>
           <div className="file-preview-actions">
             <button type="button" className="button secondary micro" onClick={() => fileInputRef.current?.click()}>
@@ -499,7 +519,11 @@ function FilePickerControl({
               <CloudArrowUp className="dropzone-icon" />
               <div>
                 <strong>Click to choose a file or drag & drop here</strong>
-                <p>Uploads directly to Cloudflare R2 (JPEG, PNG, WebP up to 10 MB)</p>
+                <p>
+                  {isAudio
+                    ? `Uploads directly to Cloudflare R2 (MP3, M4A, WAV up to ${maxSizeLabel})`
+                    : `Uploads directly to Cloudflare R2 (JPEG, PNG, WebP, AVIF up to ${maxSizeLabel})`}
+                </p>
               </div>
               <button type="button" className="button secondary micro">Browse file</button>
             </div>
@@ -748,16 +772,21 @@ function FormFieldsByKind({
             label="Cover Thumbnail Image"
             value={values.image || ""}
             onChange={(url) => updateField("image", url)}
+            accept="image/jpeg,image/png,image/webp,image/avif"
             accessToken={accessToken}
+            placeholder="Upload thumbnail or enter image URL..."
           />
 
           <FilePickerControl
-            label="Media Audio / Video File"
-            value={values.mediaUrl || ""}
-            onChange={(url) => updateField("mediaUrl", url)}
-            accept="audio/*,video/*,application/pdf"
+            label="Sermon Audio File or External Stream URL"
+            value={values.externalUrl || values.mediaUrl || ""}
+            onChange={(url) => {
+              updateField("externalUrl", url);
+              updateField("mediaUrl", url);
+            }}
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/m4a,audio/aac,audio/ogg"
             accessToken={accessToken}
-            placeholder="Upload or paste media stream URL..."
+            placeholder="Paste YouTube / SoundCloud / Vimeo link or upload audio file..."
           />
 
           <div className="form-group span-2">
