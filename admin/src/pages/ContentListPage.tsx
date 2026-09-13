@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { CaretRight } from "@phosphor-icons/react";
 import { useAuth } from "../auth";
 import type { ContentKind, ContentRecord } from "../graphql";
@@ -15,6 +15,7 @@ export function ContentListPage() {
   const kind = rawKind.toUpperCase() as ContentKind;
   const section = contentSections.find((item) => item.kind === kind);
   const { accessToken } = useAuth();
+  const navigate = useNavigate();
   const [records, setRecords] = useState<ContentRecord[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -41,6 +42,12 @@ export function ContentListPage() {
   }, [accessToken, kind, search]);
 
   const editable = !["SUBMISSION", "USER"].includes(kind);
+  const viewable = kind === "SUBMISSION"; // read-only detail page
+
+  function handleRowClick(record: ContentRecord) {
+    if (editable) setActiveModalRecord(record);
+    else if (viewable) navigate(`/content/${rawKind}/${record.id}`);
+  }
 
   return (
     <>
@@ -65,8 +72,8 @@ export function ContentListPage() {
             <div
               className="record-row"
               key={record.id}
-              onClick={() => editable ? setActiveModalRecord(record) : null}
-              style={{ cursor: editable ? "pointer" : "default" }}
+              onClick={() => handleRowClick(record)}
+              style={{ cursor: editable || viewable ? "pointer" : "default" }}
             >
               <div>
                 <strong>{recordLabel(record)}</strong>

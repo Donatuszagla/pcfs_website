@@ -39,7 +39,7 @@ async function deliverSubmission(id: string): Promise<void> {
   if (!submission) throw new Error("Submission not found");
   try {
     const transport = nodemailer.createTransport({ host: config.SMTP_HOST, port: config.SMTP_PORT, secure: false, auth: config.SMTP_USER ? { user: config.SMTP_USER, pass: config.SMTP_PASSWORD } : undefined });
-    await transport.sendMail({ from: "PCFS Website <website@pcfs.local>", to: config.CONTACT_TO_EMAIL, replyTo: submission.email || undefined, subject: `[${submission.reference}] ${submission.subject}`, text: `Name: ${submission.name}\nEmail: ${submission.email || "Not provided"}\nPhone: ${submission.phone || "Not provided"}\n\n${submission.message}` });
+    await transport.sendMail({ from: config.SMTP_FROM_EMAIL, to: config.CONTACT_TO_EMAIL, replyTo: submission.email || undefined, subject: `[${submission.reference}] ${submission.subject}`, text: `Name: ${submission.name}\nEmail: ${submission.email || "Not provided"}\nPhone: ${submission.phone || "Not provided"}\n\n${submission.message}` });
     submission.notificationStatus = "SENT"; submission.notificationError = undefined;
   } catch (error) {
     submission.notificationStatus = "FAILED"; submission.notificationError = error instanceof Error ? error.message.slice(0, 500) : "Unknown mail error";

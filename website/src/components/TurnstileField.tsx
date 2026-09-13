@@ -24,7 +24,7 @@ export function TurnstileField({ onToken }: TurnstileFieldProps) {
     script.async = true;
     script.onload = () => {
       if (window.turnstile && ref.current) {
-        window.turnstile.render(ref.current, { sitekey, callback: () => onTokenRef.current(sitekey) });
+        window.turnstile.render(ref.current, { sitekey, callback: (token: string) => onTokenRef.current(token) });
       }
     };
     document.head.appendChild(script);

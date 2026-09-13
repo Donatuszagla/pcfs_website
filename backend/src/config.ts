@@ -16,6 +16,7 @@ const schema = z.object({
   SMTP_PORT: z.coerce.number().default(1025),
   SMTP_USER: z.string().optional(),
   SMTP_PASSWORD: z.string().optional(),
+  SMTP_FROM_EMAIL: z.string().default("PCFS Website <onboarding@resend.dev>"),
   CONTACT_TO_EMAIL: z.string().email().default("admin@example.invalid"),
   MINIO_ENDPOINT: z.string().default("localhost"),
   MINIO_PORT: z.coerce.number().default(9000),

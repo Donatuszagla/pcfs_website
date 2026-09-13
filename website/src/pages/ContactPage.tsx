@@ -11,12 +11,15 @@ export interface ContactPageProps {
 
 export function ContactPage({ data }: ContactPageProps) {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState("");
   const [captchaToken, setCaptchaToken] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formEl = event.currentTarget; // capture before any async — currentTarget becomes null after the handler returns
     setStatus("sending");
-    const form = new FormData(event.currentTarget);
+    setErrorMsg("");
+    const form = new FormData(formEl);
     const input = Object.fromEntries(form.entries());
     logger.action(`Submitting contact form for: ${input.name || "Anonymous"} (${input.email || "No email"})`);
     try {
@@ -33,14 +36,15 @@ export function ContactPage({ data }: ContactPageProps) {
         errors?: { message?: string }[];
       };
       if (!response.ok || !payload.data?.submitContact?.accepted) {
-        const errorMsg = payload.errors?.[0]?.message || "Submission failed";
-        throw new Error(errorMsg);
+        const msg = payload.errors?.[0]?.message || "Submission failed";
+        throw new Error(msg);
       }
       logger.success(`Contact form submission accepted (ref: ${payload.data.submitContact.reference ?? "n/a"})`);
-      event.currentTarget.reset();
+      formEl.reset();
       setStatus("success");
     } catch (err) {
       logger.error("Contact form submission error", err);
+      setErrorMsg(err instanceof Error ? err.message : "We could not send your enquiry. Please try again.");
       setStatus("error");
     }
   }
@@ -76,7 +80,7 @@ export function ContactPage({ data }: ContactPageProps) {
           </label>
           <label>
             Message
-            <textarea name="message" required rows={6} />
+            <textarea name="message" required minLength={10} rows={6} />
           </label>
           <TurnstileField onToken={setCaptchaToken} />
           <button className="button" disabled={status === "sending" || !captchaToken}>
@@ -89,7 +93,7 @@ export function ContactPage({ data }: ContactPageProps) {
           )}
           {status === "error" && (
             <p role="alert" className="form-error">
-              We could not send your enquiry. Please try again.
+              {errorMsg || "We could not send your enquiry. Please try again."}
             </p>
           )}
         </form>
