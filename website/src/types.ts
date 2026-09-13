@@ -93,7 +93,6 @@ export interface SiteData {
 
 declare global {
   interface Window {
-    __PCFS_DATA__: SiteData;
     turnstile?: {
       render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void }) => string;
       remove: (widgetId: string) => void;

@@ -11,7 +11,7 @@ export interface ContactPageProps {
 
 export function ContactPage({ data }: ContactPageProps) {
   const [status, setStatus] = useState<"idle" | "sending" | "success" | "error">("idle");
-  const [captchaToken, setCaptchaToken] = useState(import.meta.env.DEV ? "dev-bypass" : "");
+  const [captchaToken, setCaptchaToken] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();

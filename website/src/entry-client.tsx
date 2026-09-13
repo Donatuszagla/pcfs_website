@@ -25,11 +25,21 @@ window.addEventListener("unhandledrejection", (event) => {
 
 logger.info("PCFS Website Client Hydrating");
 
+function getSSRData() {
+  try {
+    const el = document.getElementById("__pcfs_data__");
+    if (el?.textContent) return JSON.parse(el.textContent);
+  } catch {
+    logger.warn("Failed to parse SSR data, using fallback");
+  }
+  return fallbackSiteData;
+}
+
 hydrateRoot(
   document.getElementById("root")!,
   <StrictMode>
     <BrowserRouter>
-      <App data={window.__PCFS_DATA__ ?? fallbackSiteData} />
+      <App data={getSSRData()} />
     </BrowserRouter>
   </StrictMode>,
 );
