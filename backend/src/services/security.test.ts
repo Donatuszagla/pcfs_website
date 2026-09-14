@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { hashPassword, verifyPassword } from "./auth.service.js";
 import { submitContact } from "./contact.service.js";
 import { classifyEvent, saveContent } from "./content.service.js";
-import { storeAudio, storeImage } from "./upload.service.js";
+import { storeAudio, storeImage, storeVideo, isVideoMime } from "./upload.service.js";
 import { Role } from "../types.js";
 
 describe("security and validation services", () => {
@@ -23,6 +23,10 @@ describe("security and validation services", () => {
     await expect(storeImage(actor, file, "Event flyer")).rejects.toThrow("Only JPEG, PNG and WebP");
     await expect(storeImage(actor, { ...file, mimetype: "image/png" }, "")).rejects.toThrow("Alt text is required");
     await expect(storeAudio(actor, file, "Sermon audio")).rejects.toThrow("Only audio files");
+    await expect(storeVideo(actor, file, "Church video")).rejects.toThrow("Only video files");
+    expect(isVideoMime("video/mp4")).toBe(true);
+    expect(isVideoMime("video/webm")).toBe(true);
+    expect(isVideoMime("image/jpeg")).toBe(false);
   });
 
   it("classifies past, ongoing and upcoming event dates", () => {

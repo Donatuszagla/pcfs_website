@@ -98,18 +98,29 @@ function sanitizeValues(values: Record<string, unknown>): Record<string, unknown
 }
 
 function validateDomainValues(kind: ContentKind, values: Record<string, unknown>): void {
-  if (kind === "MEDIA" && typeof values.externalUrl === "string" && values.externalUrl) {
-    const host = new URL(values.externalUrl).hostname.replace(/^www\./, "");
-    let r2Host = "";
-    try {
-      r2Host = new URL(config.PUBLIC_MEDIA_URL).hostname.replace(/^www\./, "");
-    } catch {
-      // Ignore URL parsing errors for R2 endpoint
-    }
-    const approvedHosts = ["youtube.com", "youtu.be", "vimeo.com", "soundcloud.com", "facebook.com"];
-    if (r2Host) approvedHosts.push(r2Host);
-    if (!approvedHosts.some((approved) => host === approved || host.endsWith(`.${approved}`))) {
-      throw new Error("Media embeds must use an approved provider");
+  if (kind === "MEDIA" && typeof values.externalUrl === "string" && values.externalUrl.trim()) {
+    const trimmed = values.externalUrl.trim();
+    if (!trimmed.startsWith("/")) {
+      let host = "";
+      try {
+        host = new URL(trimmed).hostname.replace(/^www\./, "");
+      } catch {
+        throw new Error("Media link must be a valid URL or path");
+      }
+      let r2Host = "";
+      try {
+        r2Host = new URL(config.PUBLIC_MEDIA_URL).hostname.replace(/^www\./, "");
+      } catch {
+        // Ignore URL parsing errors for R2 endpoint
+      }
+      const approvedHosts = ["youtube.com", "youtu.be", "vimeo.com", "soundcloud.com", "facebook.com"];
+      if (r2Host) approvedHosts.push(r2Host);
+      if (config.MINIO_ENDPOINT) {
+        approvedHosts.push(config.MINIO_ENDPOINT.replace(/^https?:\/\//, "").split(":")[0]);
+      }
+      if (!approvedHosts.some((approved) => host === approved || host.endsWith(`.${approved}`))) {
+        throw new Error("Media embeds must use an approved provider");
+      }
     }
   }
   if (kind === "EVENT" && typeof values.registrationUrl === "string" && values.registrationUrl && new URL(values.registrationUrl).protocol !== "https:") throw new Error("Registration links must use HTTPS");

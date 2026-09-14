@@ -22,3 +22,34 @@ export async function uploadMediaFile(file: File, alt: string, accessToken?: str
   const data = await response.json();
   return { url: data.asset.url, alt: data.asset.alt };
 }
+
+export async function uploadBatchMediaFiles(
+  files: File[],
+  accessToken?: string
+): Promise<{ url: string; alt: string; mimeType: string; size: number }[]> {
+  const baseApi = (import.meta.env.VITE_API_URL ?? "http://localhost:4000/graphql").replace(/\/graphql\/?$/, "");
+  const uploadEndpoint = `${baseApi}/api/uploads/batch`;
+  const formData = new FormData();
+  files.forEach((file) => formData.append("files", file));
+
+  const response = await fetch(uploadEndpoint, {
+    method: "POST",
+    headers: {
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errJson = await response.json().catch(() => ({ error: "Batch upload failed" }));
+    throw new Error(errJson.error || `Batch upload failed with status ${response.status}`);
+  }
+
+  const data = await response.json();
+  return (data.assets || []).map((a: any) => ({
+    url: a.url,
+    alt: a.alt,
+    mimeType: a.mimeType,
+    size: a.size,
+  }));
+}

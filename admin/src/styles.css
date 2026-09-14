@@ -186,3 +186,9 @@ a { color: inherit; text-decoration: none; }
   .record-row time { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; } }
+
+/* ===== BATCH MEDIA UPLOADER ===== */
+.batch-media-modal { width: min(900px, 96vw) !important; }
+.batch-queue-list::-webkit-scrollbar { width: 4px; }
+.batch-queue-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+.icon-only { width: 36px; height: 36px; padding: 0; display: inline-grid; place-items: center; }

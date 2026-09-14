@@ -1,7 +1,8 @@
-import { MapPin } from "@phosphor-icons/react";
+import { Buildings, MapPin } from "@phosphor-icons/react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { PageLayout } from "../components/PageLayout";
+import { GHANA_REGIONS } from "../constants/regions";
 import type { Branch } from "../types";
 
 export interface BranchesPageProps {
@@ -10,8 +11,8 @@ export interface BranchesPageProps {
 
 export function BranchesPage({ branches }: BranchesPageProps) {
   const [region, setRegion] = useState("All");
-  const regions = ["All", ...new Set(branches.map((branch) => branch.region))];
-  const visible = region === "All" ? branches : branches.filter((branch) => branch.region === region);
+  const visible = region === "All" ? branches : branches.filter((branch) => branch.region?.toLowerCase() === region.toLowerCase());
+
   return (
     <PageLayout
       eyebrow="Find your place"
@@ -21,27 +22,43 @@ export function BranchesPage({ branches }: BranchesPageProps) {
       <div className="filter-bar">
         <label htmlFor="region">Region</label>
         <select id="region" value={region} onChange={(event) => setRegion(event.target.value)}>
-          {regions.map((value) => (
-            <option key={value}>{value}</option>
+          <option value="All">All Regions (Ghana)</option>
+          {GHANA_REGIONS.map((value) => (
+            <option key={value} value={value}>
+              {value} Region
+            </option>
           ))}
         </select>
       </div>
-      <div className="cards-grid">
-        {visible.map((branch) => (
-          <article className="content-card" key={branch.id}>
-            <img src={branch.image} alt="Temporary branch building photography" />
-            <div>
-              <span>{branch.region}</span>
-              <h2>{branch.name}</h2>
-              <p>
-                <MapPin aria-hidden />
-                {branch.city} · {branch.location}
-              </p>
-              <Link to={`/branches/${branch.slug}`}>View branch</Link>
-            </div>
-          </article>
-        ))}
-      </div>
+      {visible.length > 0 ? (
+        <div className="cards-grid">
+          {visible.map((branch) => (
+            <article className="content-card" key={branch.id}>
+              <img src={branch.image} alt={branch.name || "Branch building"} />
+              <div>
+                <span>{branch.region}</span>
+                <h2>{branch.name}</h2>
+                <p>
+                  <MapPin aria-hidden />
+                  {branch.city} · {branch.location}
+                </p>
+                <Link to={`/branches/${branch.slug}`}>View branch</Link>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="empty-state" style={{ margin: "24px 0" }}>
+          <Buildings size={40} style={{ margin: "0 auto 12px", display: "block" }} />
+          <h3>No branches listed in {region} Region yet</h3>
+          <p style={{ maxWidth: "480px", margin: "8px auto 16px" }}>
+            We are actively expanding across Ghana. Please connect with our PCFS Headquarters in Greater Accra or Western Regional Branch in Takoradi for fellowship locations and online gatherings.
+          </p>
+          <button type="button" className="button secondary micro" onClick={() => setRegion("All")}>
+            View all branches
+          </button>
+        </div>
+      )}
     </PageLayout>
   );
 }

@@ -24,8 +24,9 @@ export function FilePickerControl({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const isAudio = accept.includes("audio") || (!!value && /\.(mp3|m4a|wav|aac|ogg)(\?.*)?$/i.test(value));
-  const maxSizeBytes = isAudio ? 200 * 1024 * 1024 : 10 * 1024 * 1024;
-  const maxSizeLabel = isAudio ? "200 MB" : "10 MB";
+  const isVideo = accept.includes("video") || (!!value && /\.(mp4|webm|mov|mkv|ogg|3gp)(\?.*)?$/i.test(value));
+  const maxSizeBytes = isVideo || isAudio ? 500 * 1024 * 1024 : 15 * 1024 * 1024;
+  const maxSizeLabel = isVideo || isAudio ? "500 MB" : "15 MB";
 
   async function handleFileSelect(file: File) {
     if (!file) return;
@@ -59,7 +60,13 @@ export function FilePickerControl({
 
       {value ? (
         <div className="file-preview-card">
-          {isAudio ? (
+          {isVideo ? (
+            <div style={{ padding: "0.5rem 0", width: "100%" }}>
+              <video controls src={value} style={{ width: "100%", maxHeight: "240px", borderRadius: "6px", display: "block" }}>
+                Your browser does not support the video element.
+              </video>
+            </div>
+          ) : isAudio ? (
             <div style={{ padding: "0.5rem 0", width: "100%" }}>
               <audio controls src={value} style={{ width: "100%", display: "block" }}>
                 Your browser does not support the audio element.
@@ -70,7 +77,7 @@ export function FilePickerControl({
           )}
           <div className="file-preview-info">
             <span className="file-preview-url">{value}</span>
-            <small>✓ Asset stored on Cloudflare R2</small>
+            <small>✓ Asset stored on Cloudflare R2 / MinIO</small>
           </div>
           <div className="file-preview-actions">
             <button type="button" className="button secondary micro" onClick={() => fileInputRef.current?.click()}>
@@ -96,7 +103,7 @@ export function FilePickerControl({
           {uploading ? (
             <div className="dropzone-state">
               <SpinnerGap className="spin dropzone-icon" />
-              <span>Uploading to Cloudflare R2...</span>
+              <span>Uploading to Cloudflare R2 / Storage...</span>
             </div>
           ) : (
             <div className="dropzone-state">
@@ -104,8 +111,10 @@ export function FilePickerControl({
               <div>
                 <strong>Click to choose a file or drag & drop here</strong>
                 <p>
-                  {isAudio
-                    ? `Uploads directly to Cloudflare R2 (MP3, M4A, WAV up to ${maxSizeLabel})`
+                  {isVideo
+                    ? `Uploads directly to Cloudflare R2 (MP4, WebM, MOV, OGG up to ${maxSizeLabel})`
+                    : isAudio
+                    ? `Uploads directly to Cloudflare R2 (MP3, M4A, WAV, AAC up to ${maxSizeLabel})`
                     : `Uploads directly to Cloudflare R2 (JPEG, PNG, WebP, AVIF up to ${maxSizeLabel})`}
                 </p>
               </div>

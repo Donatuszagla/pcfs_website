@@ -257,3 +257,95 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .contact-form label, .captcha-field, .contact-form > button, .contact-form > p { grid-column: 1; }
   .empty-state { padding: 42px 20px; }
 }
+
+/* ===== MEDIA PAGE: TABS ===== */
+.media-tab-bar { display: flex; gap: 6px; background: var(--surface-soft); border-radius: 10px; padding: 6px; border: 1px solid var(--line); }
+.media-tab-btn { flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 10px 16px; border: none; border-radius: 7px; background: transparent; font: 600 14px/1 "Manrope", sans-serif; color: var(--muted); cursor: pointer; transition: all 0.22s ease; white-space: nowrap; }
+.media-tab-btn:hover { background: rgba(11,49,216,.06); color: var(--blue); }
+.media-tab-btn.active { background: var(--blue); color: white; box-shadow: 0 4px 14px rgba(11,49,216,.30); }
+
+/* Gallery sub-filter chips */
+.gallery-filter-chips { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+.filter-chip { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border: 1.5px solid var(--line); border-radius: 100px; background: white; font: 600 12px/1 "Manrope", sans-serif; color: var(--muted); cursor: pointer; transition: all 0.2s ease; }
+.filter-chip:hover { border-color: var(--blue); color: var(--blue); }
+.filter-chip.active { background: var(--blue); border-color: var(--blue); color: white; }
+
+/* ===== SERMON CARDS ===== */
+.sermon-card .sermon-card-img-wrapper { position: relative; overflow: hidden; }
+.sermon-card .sermon-card-img-wrapper > img { width: 100%; height: 200px; object-fit: cover; transition: transform 0.5s ease-out; }
+.sermon-card:hover .sermon-card-img-wrapper > img { transform: scale(1.05); }
+.sermon-type-badge { position: absolute; top: 10px; right: 10px; padding: 4px 10px; border-radius: 100px; background: rgba(7,28,153,.85); color: white; font: 700 10px/1 "Manrope",sans-serif; text-transform: uppercase; letter-spacing: .05em; backdrop-filter: blur(4px); }
+.sermon-action-link { display: inline-block; margin-top: 12px; color: var(--blue); font-weight: 700; font-size: 14px; transition: color .2s ease; }
+.sermon-action-link:hover { color: var(--blue-bright); text-decoration: underline; }
+
+/* ===== PHONE GALLERY GRID ===== */
+.phone-gallery-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.phone-gallery-tile { position: relative; aspect-ratio: 1; overflow: hidden; border-radius: 6px; cursor: pointer; background: #0d1129; }
+.phone-gallery-tile img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.45s cubic-bezier(.16,1,.3,1), opacity 0.3s ease; display: block; }
+.phone-gallery-tile:hover img { transform: scale(1.08); opacity: 0.82; }
+.phone-gallery-tile:focus-visible { outline: 3px solid var(--blue-bright); outline-offset: 2px; }
+.gallery-tile-video-badge { position: absolute; top: 8px; left: 8px; display: inline-flex; align-items: center; gap: 4px; padding: 4px 9px; background: rgba(7,28,153,.85); color: white; border-radius: 100px; font: 700 10px/1 "Manrope",sans-serif; letter-spacing: .05em; backdrop-filter: blur(4px); pointer-events: none; }
+.gallery-tile-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 28px 10px 10px; background: linear-gradient(to top, rgba(4,15,80,.85) 0%, transparent 100%); color: white; transform: translateY(10px); opacity: 0; transition: all 0.3s ease; pointer-events: none; }
+.phone-gallery-tile:hover .gallery-tile-caption, .phone-gallery-tile:focus-within .gallery-tile-caption { transform: translateY(0); opacity: 1; }
+.gallery-tile-caption h4 { font: 700 12px/1.3 "Manrope",sans-serif; margin: 0 0 2px; }
+.gallery-tile-caption small { font-size: 10px; opacity: .8; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* ===== PHONE GALLERY LIGHTBOX OVERLAY ===== */
+.phone-gallery-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(4, 9, 30, 0.97); display: flex; flex-direction: column; overflow: hidden; }
+.phone-gallery-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; background: linear-gradient(to bottom, rgba(4,9,30,1) 0%, transparent 100%); position: relative; z-index: 2; gap: 12px; flex-shrink: 0; }
+.phone-gallery-header-left { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.phone-gallery-header-actions { display: flex; gap: 6px; flex-shrink: 0; }
+.gallery-counter-pill { padding: 4px 10px; background: rgba(255,255,255,.12); color: white; border-radius: 100px; font: 700 12px/1 "Manrope",sans-serif; flex-shrink: 0; }
+.gallery-type-pill { padding: 4px 10px; border-radius: 100px; font: 700 10px/1 "Manrope",sans-serif; letter-spacing: .05em; flex-shrink: 0; }
+.gallery-type-pill.photo { background: rgba(37,99,235,.3); color: #93c5fd; }
+.gallery-type-pill.video { background: rgba(124,58,237,.3); color: #c4b5fd; }
+.gallery-title-wrapper { min-width: 0; }
+.gallery-header-title { font: 600 15px/1.2 "Manrope",sans-serif; color: white; margin: 0 0 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gallery-header-meta { display: flex; gap: 12px; font-size: 12px; color: rgba(255,255,255,.6); }
+.gallery-header-meta span { display: flex; align-items: center; gap: 4px; }
+.gallery-icon-btn { display: inline-grid; place-items: center; width: 38px; height: 38px; background: rgba(255,255,255,.1); border: none; border-radius: 50%; color: white; cursor: pointer; transition: background 0.2s ease, transform 0.2s ease; }
+.gallery-icon-btn:hover { background: rgba(255,255,255,.22); transform: scale(1.08); }
+.gallery-icon-btn.close-btn:hover { background: rgba(220,38,38,.5); }
+.phone-gallery-viewport { flex: 1; position: relative; display: flex; align-items: center; justify-content: center; min-height: 0; overflow: hidden; }
+.phone-gallery-media-canvas { position: relative; max-width: 100%; max-height: 100%; display: flex; align-items: center; justify-content: center; flex-direction: column; }
+.gallery-main-img { max-width: 100%; max-height: calc(100vh - 220px); object-fit: contain; border-radius: 4px; transition: transform 0.35s cubic-bezier(.16,1,.3,1); cursor: zoom-in; user-select: none; display: block; }
+.gallery-main-img.zoomed { transform: scale(1.9); cursor: zoom-out; }
+.gallery-video-container { display: flex; align-items: center; justify-content: center; width: 100%; max-height: calc(100vh - 220px); }
+.gallery-video-player { max-width: 100%; max-height: calc(100vh - 220px); border-radius: 8px; outline: none; }
+.gallery-video-iframe { width: min(900px, 90vw); height: min(506px, 50vh); border: none; border-radius: 8px; }
+.gallery-video-fallback { position: relative; display: inline-flex; align-items: center; justify-content: center; }
+.gallery-video-fallback .gallery-img-preview { max-width: min(700px, 90vw); max-height: calc(100vh - 220px); object-fit: contain; border-radius: 8px; opacity: .55; }
+.gallery-play-large-btn { position: absolute; display: inline-flex; flex-direction: row; align-items: center; gap: 8px; color: white; font: 700 15px/1 "Manrope",sans-serif; text-decoration: none; transition: transform .2s ease; background: rgba(11,49,216,.75); border-radius: 100px; padding: 16px 28px; backdrop-filter: blur(6px); }
+.gallery-play-large-btn:hover { transform: scale(1.06); background: rgba(11,49,216,.9); color: white; }
+.gallery-caption-overlay { padding: 10px 16px; margin-top: 12px; background: rgba(255,255,255,.06); border-radius: 6px; max-width: 700px; }
+.gallery-caption-overlay p { color: rgba(255,255,255,.75); font-size: 13px; line-height: 1.55; margin: 0; }
+.gallery-nav-btn { position: absolute; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 52px; height: 52px; background: rgba(255,255,255,.12); border: none; border-radius: 50%; color: white; cursor: pointer; transition: background .2s ease, transform .2s ease; z-index: 2; backdrop-filter: blur(8px); }
+.gallery-nav-btn:hover { background: rgba(255,255,255,.25); transform: translateY(-50%) scale(1.1); }
+.gallery-nav-btn.prev-btn { left: 16px; }
+.gallery-nav-btn.next-btn { right: 16px; }
+.phone-gallery-filmstrip-tray { flex-shrink: 0; padding: 10px 16px 16px; background: linear-gradient(to top, rgba(4,9,30,1) 0%, transparent 100%); }
+.phone-gallery-filmstrip { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; -ms-overflow-style: none; scroll-behavior: smooth; }
+.phone-gallery-filmstrip::-webkit-scrollbar { display: none; }
+.filmstrip-thumb { flex-shrink: 0; position: relative; width: 58px; height: 58px; border-radius: 6px; overflow: hidden; cursor: pointer; border: 2px solid transparent; background: #1a2040; transition: border-color .2s ease, transform .2s ease; padding: 0; }
+.filmstrip-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; opacity: 0.6; transition: opacity .2s ease; }
+.filmstrip-thumb:hover img { opacity: 0.85; }
+.filmstrip-thumb.active { border-color: #4d7aff; transform: scale(1.12); box-shadow: 0 0 0 3px rgba(77,122,255,.4); }
+.filmstrip-thumb.active img { opacity: 1; }
+.filmstrip-video-indicator { position: absolute; bottom: 3px; right: 3px; width: 18px; height: 18px; background: rgba(7,28,153,.85); border-radius: 50%; display: grid; place-items: center; color: white; }
+
+/* ===== RESPONSIVE: GALLERY + MEDIA TABS ===== */
+@media (max-width: 900px) {
+  .phone-gallery-grid { grid-template-columns: repeat(3, 1fr); }
+  .media-tab-btn { font-size: 12px; padding: 8px 10px; gap: 5px; }
+}
+@media (max-width: 620px) {
+  .phone-gallery-grid { grid-template-columns: repeat(2, 1fr); gap: 4px; }
+  .gallery-nav-btn { width: 40px; height: 40px; }
+  .gallery-nav-btn.prev-btn { left: 8px; }
+  .gallery-nav-btn.next-btn { right: 8px; }
+  .phone-gallery-header { padding: 10px 12px; }
+  .gallery-title-wrapper { display: none; }
+  .filmstrip-thumb { width: 46px; height: 46px; }
+  .media-tab-bar { flex-wrap: wrap; }
+  .gallery-filter-chips { flex-wrap: wrap; }
+}

@@ -1,6 +1,7 @@
 import type { ContentKind } from "../graphql";
 import { useAuth } from "../auth";
 import { formatDatetimeLocal } from "../utils/helpers";
+import { GHANA_REGIONS } from "../constants/regions";
 import { FilePickerControl } from "./FilePickerControl";
 
 export function FormFieldsByKind({
@@ -87,15 +88,11 @@ export function FormFieldsByKind({
           </div>
 
           <div className="form-group">
-            <label>Region</label>
+            <label>Region (Ghana)</label>
             <select className="form-select" value={values.region || "Western"} onChange={(e) => updateField("region", e.target.value)}>
-              <option value="Western">Western Region</option>
-              <option value="Greater Accra">Greater Accra Region</option>
-              <option value="Ashanti">Ashanti Region</option>
-              <option value="Central">Central Region</option>
-              <option value="Eastern">Eastern Region</option>
-              <option value="Volta">Volta Region</option>
-              <option value="Northern">Northern Region</option>
+              {GHANA_REGIONS.map((reg) => (
+                <option key={reg} value={reg}>{reg} Region</option>
+              ))}
             </select>
           </div>
 
@@ -201,41 +198,57 @@ export function FormFieldsByKind({
           <div className="form-group">
             <label>Media Type</label>
             <select className="form-select" value={values.type || "VIDEO"} onChange={(e) => updateField("type", e.target.value)}>
-              <option value="VIDEO">Video Teaching</option>
-              <option value="AUDIO">Audio Sermon</option>
-              <option value="ARTICLE">Article / Publication</option>
+              <option value="PHOTO">Photo / Gallery Picture</option>
+              <option value="VIDEO">Video Message / Clip</option>
+              <option value="AUDIO">Audio Sermon / Podcast</option>
             </select>
           </div>
 
           <div className="form-group">
-            <label>Speaker / Preacher</label>
-            <input className="form-control" value={values.speaker || ""} onChange={(e) => updateField("speaker", e.target.value)} placeholder="e.g. PCFS Teaching Ministry" />
+            <label>Speaker / Preacher / Event</label>
+            <input className="form-control" value={values.speaker || ""} onChange={(e) => updateField("speaker", e.target.value)} placeholder="e.g. PCFS Teaching Ministry / Pastor David" />
           </div>
 
           <div className="form-group">
-            <label>Category</label>
-            <input className="form-control" value={values.category || ""} onChange={(e) => updateField("category", e.target.value)} placeholder="e.g. Teaching / Sermon" />
+            <label>Category (Filter)</label>
+            <div style={{ display: "flex", gap: "6px", marginBottom: "6px" }}>
+              <button
+                type="button"
+                className={`button micro ${values.category === "Sermons" ? "primary" : "secondary"}`}
+                onClick={() => updateField("category", "Sermons")}
+              >
+                Sermons
+              </button>
+              <button
+                type="button"
+                className={`button micro ${values.category === "Gallery" ? "primary" : "secondary"}`}
+                onClick={() => updateField("category", "Gallery")}
+              >
+                Gallery
+              </button>
+            </div>
+            <input className="form-control" value={values.category || ""} onChange={(e) => updateField("category", e.target.value)} placeholder="e.g. Sermons or Gallery" />
           </div>
 
           <FilePickerControl
-            label="Cover Thumbnail Image"
+            label="Image / Photo Asset or Video Cover"
             value={values.image || ""}
             onChange={(url) => updateField("image", url)}
-            accept="image/jpeg,image/png,image/webp,image/avif"
+            accept="image/jpeg,image/png,image/webp,image/avif,image/gif"
             accessToken={accessToken}
-            placeholder="Upload thumbnail or enter image URL..."
+            placeholder="Upload photo / thumbnail or enter image URL..."
           />
 
           <FilePickerControl
-            label="Sermon Audio File or External Stream URL"
+            label="Media Video / Audio File or External Stream URL"
             value={values.externalUrl || values.mediaUrl || ""}
             onChange={(url) => {
               updateField("externalUrl", url);
               updateField("mediaUrl", url);
             }}
-            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/m4a,audio/aac,audio/ogg"
+            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/m4a,audio/aac,audio/ogg,video/mp4,video/webm,video/quicktime,video/ogg"
             accessToken={accessToken}
-            placeholder="Paste YouTube / SoundCloud / Vimeo link or upload audio file..."
+            placeholder="Paste YouTube / Vimeo / SoundCloud link or upload video / audio file..."
           />
 
           <div className="form-group span-2">

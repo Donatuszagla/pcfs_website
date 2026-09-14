@@ -8,10 +8,15 @@ import type { Actor } from "../types.js";
 
 const allowedImageMimeTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif", "image/gif"]);
 const allowedAudioMimeTypes = new Set(["audio/mpeg", "audio/mp3", "audio/wav", "audio/x-wav", "audio/aac", "audio/ogg", "audio/mp4", "audio/x-m4a", "audio/m4a", "audio/webm"]);
+const allowedVideoMimeTypes = new Set(["video/mp4", "video/webm", "video/quicktime", "video/x-msvideo", "video/mpeg", "video/ogg", "video/3gpp"]);
 const minio = new MinioClient({ endPoint: config.MINIO_ENDPOINT, port: config.MINIO_PORT, useSSL: config.MINIO_USE_SSL, accessKey: config.MINIO_ACCESS_KEY, secretKey: config.MINIO_SECRET_KEY });
 
 export function isAudioMime(mimeType: string): boolean {
   return allowedAudioMimeTypes.has(mimeType) || mimeType.startsWith("audio/");
+}
+
+export function isVideoMime(mimeType: string): boolean {
+  return allowedVideoMimeTypes.has(mimeType) || mimeType.startsWith("video/");
 }
 
 export function isImageMime(mimeType: string): boolean {
@@ -70,6 +75,33 @@ export async function storeAudio(actor: Actor, file: Express.Multer.File, title?
   return asset.toObject();
 }
 
+/** Validates and stores a video file in object storage without transcoding. */
+export async function storeVideo(actor: Actor, file: Express.Multer.File, title?: string): Promise<Record<string, unknown>> {
+  if (!isVideoMime(file.mimetype)) throw new Error("Only video files (MP4, WebM, MOV, etc.) are allowed");
+  if (file.size > 500 * 1024 * 1024) throw new Error("Videos must not exceed 500 MB");
+  await ensureBucket();
+
+  const baseName = `${Date.now()}-${crypto.randomUUID()}`;
+  const originalExtension = extensionForMime(file.mimetype) || ".mp4";
+  const key = `video/${baseName}${originalExtension}`;
+  await minio.putObject(config.MINIO_BUCKET, key, file.buffer, file.size, {
+    "Content-Type": file.mimetype,
+    "Cache-Control": "public, max-age=31536000, immutable",
+  });
+
+  const alt = (title || file.originalname || "Church Video").replace(/\.[^/.]+$/, "").trim() || "Church Video";
+  const asset = await AssetModel.create({
+    key,
+    url: publicUrl(key),
+    mimeType: file.mimetype,
+    size: file.size,
+    alt,
+    variants: [],
+    uploadedBy: actor.id,
+  });
+  return asset.toObject();
+}
+
 async function ensureBucket(): Promise<void> {
   try {
     if (!(await minio.bucketExists(config.MINIO_BUCKET))) {
@@ -103,6 +135,12 @@ function extensionForMime(mimeType: string): string {
     case "audio/x-m4a":
     case "audio/m4a": return ".m4a";
     case "audio/webm": return ".webm";
+    case "video/mp4": return ".mp4";
+    case "video/webm": return ".webm";
+    case "video/quicktime": return ".mov";
+    case "video/ogg": return ".ogv";
+    case "video/x-msvideo": return ".avi";
+    case "video/3gpp": return ".3gp";
     default: return "";
   }
 }

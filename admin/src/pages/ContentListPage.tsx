@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { CaretRight } from "@phosphor-icons/react";
+import { CaretRight, CloudArrowUp } from "@phosphor-icons/react";
 import { useAuth } from "../auth";
 import type { ContentKind, ContentRecord } from "../graphql";
 import { graphqlRequest, operations } from "../graphql";
 import { contentSections } from "../constants/contentSections";
 import { formatDate, recordLabel, recordSecondary } from "../utils/helpers";
 import { ContentModalWrapper } from "../components/ContentModalWrapper";
+import { BatchMediaUploader } from "../components/BatchMediaUploader";
 import { EmptyState, InlineStatus, PageTitle } from "../components/UI";
 import { logger } from "../utils/logger";
 
@@ -21,6 +22,7 @@ export function ContentListPage() {
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
   const [activeModalRecord, setActiveModalRecord] = useState<ContentRecord | "new" | null>(null);
+  const [showBatchModal, setShowBatchModal] = useState(false);
 
   const fetchRecords = () => {
     setStatus("loading");
@@ -55,7 +57,26 @@ export function ContentListPage() {
         eyebrow="CONTENT"
         title={section?.label ?? kind}
         description={`Manage ${section?.label.toLowerCase() ?? "records"}, publishing state and public visibility.`}
-        action={editable ? <button className="button primary" onClick={() => setActiveModalRecord("new")}>Create new</button> : undefined}
+        action={
+          editable ? (
+            <div style={{ display: "flex", gap: "10px" }}>
+              {kind === "MEDIA" && (
+                <button
+                  type="button"
+                  className="button secondary"
+                  onClick={() => setShowBatchModal(true)}
+                  style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}
+                >
+                  <CloudArrowUp size={18} />
+                  Batch Upload Media
+                </button>
+              )}
+              <button className="button primary" onClick={() => setActiveModalRecord("new")}>
+                Create new
+              </button>
+            </div>
+          ) : undefined
+        }
       />
       <div className="toolbar">
         <label className="search-field">
@@ -98,6 +119,19 @@ export function ContentListPage() {
             fetchRecords();
           }}
         />
+      )}
+
+      {showBatchModal && (
+        <div className="modal-backdrop" onClick={(e) => e.target === e.currentTarget && setShowBatchModal(false)}>
+          <BatchMediaUploader
+            accessToken={accessToken}
+            onClose={() => setShowBatchModal(false)}
+            onComplete={() => {
+              setShowBatchModal(false);
+              fetchRecords();
+            }}
+          />
+        </div>
       )}
     </>
   );
