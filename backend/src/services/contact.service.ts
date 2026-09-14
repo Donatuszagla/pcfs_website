@@ -38,11 +38,50 @@ async function deliverSubmission(id: string): Promise<void> {
   const submission = await FormSubmissionModel.findById(id);
   if (!submission) throw new Error("Submission not found");
   try {
-    const transport = nodemailer.createTransport({ host: config.SMTP_HOST, port: config.SMTP_PORT, secure: false, auth: config.SMTP_USER ? { user: config.SMTP_USER, pass: config.SMTP_PASSWORD } : undefined });
-    await transport.sendMail({ from: config.SMTP_FROM_EMAIL, to: config.CONTACT_TO_EMAIL, replyTo: submission.email || undefined, subject: `[${submission.reference}] ${submission.subject}`, text: `Name: ${submission.name}\nEmail: ${submission.email || "Not provided"}\nPhone: ${submission.phone || "Not provided"}\n\n${submission.message}` });
-    submission.notificationStatus = "SENT"; submission.notificationError = undefined;
+    const textBody = `Name: ${submission.name}\nEmail: ${submission.email || "Not provided"}\nPhone: ${submission.phone || "Not provided"}\n\n${submission.message}`;
+    const subjectLine = `[${submission.reference}] ${submission.subject}`;
+
+    if (config.SMTP_PASSWORD?.startsWith("re_") || config.SMTP_HOST?.includes("resend")) {
+      const response = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${config.SMTP_PASSWORD}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: config.SMTP_FROM_EMAIL,
+          to: [config.CONTACT_TO_EMAIL],
+          reply_to: submission.email || undefined,
+          subject: subjectLine,
+          text: textBody,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = (await response.json().catch(() => ({}))) as { message?: string };
+        throw new Error(errorData.message || `Resend API error: HTTP ${response.status}`);
+      }
+    } else {
+      const transport = nodemailer.createTransport({
+        host: config.SMTP_HOST,
+        port: config.SMTP_PORT,
+        secure: config.SMTP_PORT === 465,
+        auth: config.SMTP_USER ? { user: config.SMTP_USER, pass: config.SMTP_PASSWORD } : undefined,
+      });
+      await transport.sendMail({
+        from: config.SMTP_FROM_EMAIL,
+        to: config.CONTACT_TO_EMAIL,
+        replyTo: submission.email || undefined,
+        subject: subjectLine,
+        text: textBody,
+      });
+    }
+
+    submission.notificationStatus = "SENT";
+    submission.notificationError = undefined;
   } catch (error) {
-    submission.notificationStatus = "FAILED"; submission.notificationError = error instanceof Error ? error.message.slice(0, 500) : "Unknown mail error";
+    submission.notificationStatus = "FAILED";
+    submission.notificationError = error instanceof Error ? error.message.slice(0, 500) : "Unknown mail error";
   }
   await submission.save();
 }
