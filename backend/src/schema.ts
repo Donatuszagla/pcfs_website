@@ -1,7 +1,7 @@
 import { GraphQLError, GraphQLScalarType, Kind, type ValueNode } from "graphql";
 import { Role, type Actor, type ContentKind, type GraphqlContext } from "./types.js";
 import { createUser, login, logout, rotateRefreshToken } from "./services/auth.service.js";
-import { archiveContent, getPublicSite, listAdminRecords, publishContent, reorderContent, saveContent } from "./services/content.service.js";
+import { archiveContent, getDashboardStats, getPublicSite, listAdminRecords, publishContent, reorderContent, saveContent } from "./services/content.service.js";
 import { retryContact, submitContact } from "./services/contact.service.js";
 
 export const typeDefs = `#graphql
@@ -99,10 +99,27 @@ export const typeDefs = `#graphql
   input CreateUserInput { email: String! name: String! password: String! role: Role! }
   input RetryContactInput { id: ID! }
 
+  type DashboardStats {
+    pages: Int!
+    branches: Int!
+    events: Int!
+    upcomingEvents: Int!
+    media: Int!
+    sermons: Int!
+    gallery: Int!
+    leaders: Int!
+    ministries: Int!
+    enquiries: Int!
+    pendingEnquiries: Int!
+    users: Int!
+    branchRegionsCount: Int!
+  }
+
   type Query {
     publicSite: PublicSite!
     me: Actor
     adminRecords(data: AdminRecordsInput!): [ContentRecord!]!
+    dashboardStats: DashboardStats!
   }
 
   type Mutation {
@@ -143,6 +160,10 @@ export const resolvers = {
       const actor = requireActor(context);
       const records = await listAdminRecords(actor, args.data);
       return records.map((record) => toContentRecord(args.data.kind, record));
+    },
+    dashboardStats: async (_root: unknown, _args: unknown, context: GraphqlContext) => {
+      requireActor(context);
+      return getDashboardStats();
     },
   },
   Mutation: {

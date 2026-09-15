@@ -66,11 +66,28 @@ export async function graphqlRequest<T>(query: string, variables?: Record<string
   }
 }
 
+export interface DashboardStats {
+  pages: number;
+  branches: number;
+  events: number;
+  upcomingEvents: number;
+  media: number;
+  sermons: number;
+  gallery: number;
+  leaders: number;
+  ministries: number;
+  enquiries: number;
+  pendingEnquiries: number;
+  users: number;
+  branchRegionsCount: number;
+}
+
 export const operations = {
   login: `mutation Login($data: LoginInput!) { login(data: $data) { accessToken actor { id email role } } }`,
   refresh: `mutation Refresh { refresh { accessToken actor { id email role } } }`,
   logout: `mutation Logout { logout }`,
   records: `query Records($data: AdminRecordsInput!) { adminRecords(data: $data) { id kind status values createdAt updatedAt } }`,
+  dashboardStats: `query DashboardStats { dashboardStats { pages branches events upcomingEvents media sermons gallery leaders ministries enquiries pendingEnquiries users branchRegionsCount } }`,
   save: `mutation Save($data: SaveContentInput!) { saveContent(data: $data) { id kind status values createdAt updatedAt } }`,
   publish: `mutation Publish($data: RecordActionInput!) { publishContent(data: $data) { id kind status values updatedAt } }`,
   archive: `mutation Archive($data: RecordActionInput!) { archiveContent(data: $data) { id kind status values updatedAt } }`,

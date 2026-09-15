@@ -40,6 +40,55 @@ export async function getPublicSite(): Promise<Record<string, unknown>> {
   };
 }
 
+/** Aggregates live database counts for the admin dashboard overview */
+export async function getDashboardStats(): Promise<Record<string, number>> {
+  const [
+    pages,
+    branches,
+    events,
+    upcomingEvents,
+    media,
+    sermons,
+    gallery,
+    leaders,
+    ministries,
+    enquiries,
+    pendingEnquiries,
+    users,
+    distinctRegions,
+  ] = await Promise.all([
+    PageModel.countDocuments(),
+    BranchModel.countDocuments(),
+    EventModel.countDocuments(),
+    EventModel.countDocuments({ startAt: { $gte: new Date() } }),
+    MediaModel.countDocuments(),
+    MediaModel.countDocuments({ $or: [{ category: "Sermons" }, { type: "AUDIO" }] }),
+    MediaModel.countDocuments({ $or: [{ category: "Gallery" }, { type: "PHOTO" }] }),
+    LeaderModel.countDocuments(),
+    MinistryModel.countDocuments(),
+    FormSubmissionModel.countDocuments(),
+    FormSubmissionModel.countDocuments({ notificationStatus: "PENDING" }),
+    UserModel.countDocuments(),
+    BranchModel.distinct("region"),
+  ]);
+
+  return {
+    pages,
+    branches,
+    events,
+    upcomingEvents,
+    media,
+    sermons,
+    gallery,
+    leaders,
+    ministries,
+    enquiries,
+    pendingEnquiries,
+    users,
+    branchRegionsCount: distinctRegions.length,
+  };
+}
+
 /** Lists CMS records for a permitted domain with bounded pagination and optional text search. */
 export async function listAdminRecords(actor: Actor, data: { kind: ContentKind; search?: string; limit?: number; after?: string }): Promise<unknown[]> {
   requirePermission(actor.role, data.kind);
