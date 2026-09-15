@@ -349,3 +349,203 @@ button, a { -webkit-tap-highlight-color: transparent; }
   .media-tab-bar { flex-wrap: wrap; }
   .gallery-filter-chips { flex-wrap: wrap; }
 }
+
+/* ==========================================================================
+   WATCH & LISTEN TEACHING PAGE: PROFESSIONAL MEDIA HUB
+   ========================================================================== */
+.teaching-page-container { display: flex; flex-direction: column; gap: 32px; max-width: 1060px; margin: 0 auto; }
+
+/* Breadcrumbs & Navigation Bar */
+.teaching-breadcrumb-bar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.teaching-back-link { display: inline-flex; align-items: center; gap: 8px; font: 700 14px/1 "Manrope", sans-serif; color: var(--blue); text-decoration: none; transition: transform .2s ease, color .2s ease; }
+.teaching-back-link:hover { color: var(--blue-bright); transform: translateX(-3px); }
+.teaching-meta-pills { display: flex; gap: 8px; align-items: center; }
+.teaching-category-pill { padding: 5px 12px; border-radius: 100px; background: var(--surface-soft); border: 1px solid var(--line); font: 700 12px/1 "Manrope", sans-serif; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; }
+.teaching-format-pill { padding: 5px 12px; border-radius: 100px; font: 700 12px/1 "Manrope", sans-serif; text-transform: uppercase; letter-spacing: .05em; }
+.teaching-format-pill.video { background: rgba(11, 49, 216, 0.12); color: var(--blue); border: 1px solid rgba(11, 49, 216, 0.25); }
+.teaching-format-pill.audio { background: rgba(16, 185, 129, 0.12); color: #065f46; border: 1px solid rgba(16, 185, 129, 0.25); }
+.teaching-format-pill.photo { background: rgba(124, 58, 237, 0.12); color: #6d28d9; border: 1px solid rgba(124, 58, 237, 0.25); }
+
+/* Speaker & Date Metadata Strip */
+.teaching-speaker-strip { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 18px; padding: 16px 24px; background: white; border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 4px 16px rgba(7, 28, 153, 0.04); }
+.teaching-speaker-left { display: flex; align-items: center; gap: 14px; }
+.teaching-speaker-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(135deg, var(--blue), var(--blue-bright)); color: white; display: grid; place-items: center; box-shadow: 0 4px 12px rgba(11, 49, 216, 0.25); }
+.teaching-speaker-label { display: block; font-size: 11px; text-transform: uppercase; font-weight: 700; letter-spacing: .06em; color: var(--muted); }
+.teaching-speaker-name { display: block; font: 700 17px/1.2 "Manrope", sans-serif; color: var(--ink); margin-top: 2px; }
+.teaching-speaker-right { display: flex; align-items: center; gap: 20px; }
+.teaching-meta-stat { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 13px; font-weight: 600; }
+
+/* ==========================================================================
+   VIDEO PLAYER COMPONENT
+   ========================================================================== */
+.video-teaching-player-card { display: flex; flex-direction: column; background: #050a22; border-radius: 14px; overflow: hidden; box-shadow: 0 20px 50px rgba(4, 15, 80, 0.25); border: 1px solid rgba(255, 255, 255, 0.08); transition: max-width 0.35s ease; }
+.video-teaching-player-card.theater-mode { max-width: 100vw; width: 100%; border-radius: 8px; }
+
+/* 16:9 Cinema Stage */
+.video-cinema-stage { position: relative; width: 100%; aspect-ratio: 16 / 9; background: black; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.direct-video-wrapper, .iframe-video-wrapper, .generic-video-wrapper, .video-pending-wrapper { width: 100%; height: 100%; position: relative; }
+.native-html5-video { width: 100%; height: 100%; object-fit: contain; background: black; outline: none; }
+.embedded-video-iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+/* Video Poster & Big Play Button */
+.video-poster-overlay { position: absolute; inset: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.video-poster-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
+.video-poster-overlay:hover .video-poster-img { transform: scale(1.04); }
+.video-poster-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3, 10, 40, 0.3) 0%, rgba(3, 10, 40, 0.75) 100%); }
+.video-center-play-circle { position: relative; z-index: 2; width: 84px; height: 84px; border-radius: 50%; background: var(--blue); color: white; display: grid; place-items: center; box-shadow: 0 0 0 10px rgba(11, 49, 216, 0.35), 0 12px 36px rgba(0, 0, 0, 0.5); transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease; }
+.video-poster-overlay:hover .video-center-play-circle { transform: scale(1.12); background: var(--blue-bright); box-shadow: 0 0 0 16px rgba(11, 49, 216, 0.45), 0 16px 42px rgba(0, 0, 0, 0.6); }
+.video-poster-badge { position: absolute; bottom: 20px; left: 24px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 100px; background: rgba(3, 12, 54, 0.85); color: white; font: 700 12px/1 "Manrope", sans-serif; backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); }
+
+/* External play button fallback */
+.video-open-external-large-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 2; display: inline-flex; align-items: center; gap: 12px; padding: 18px 34px; border-radius: 100px; background: var(--blue); color: white; font: 700 16px/1 "Manrope", sans-serif; text-decoration: none; box-shadow: 0 10px 30px rgba(11, 49, 216, 0.5); transition: transform .2s ease, background .2s ease; }
+.video-open-external-large-btn:hover { transform: translate(-50%, -50%) scale(1.06); background: var(--blue-bright); color: white; }
+
+/* Pending upload placeholder */
+.video-pending-wrapper { display: flex; align-items: center; justify-content: center; position: relative; }
+.video-poster-img.blurred { filter: blur(12px) brightness(0.4); }
+.video-pending-message { position: absolute; z-index: 2; text-align: center; color: white; max-width: 440px; padding: 24px; }
+.video-pending-message svg { color: #f59e0b; margin-bottom: 12px; }
+.video-pending-message h3 { font: 700 20px/1.2 "Manrope", sans-serif; margin: 0 0 8px; }
+.video-pending-message p { color: rgba(255, 255, 255, 0.7); font-size: 14px; line-height: 1.55; }
+
+/* Video Player Toolbar */
+.video-player-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; padding: 14px 20px; background: #070e30; border-top: 1px solid rgba(255, 255, 255, 0.08); }
+.video-toolbar-left, .video-toolbar-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.video-toolbar-btn { display: inline-flex; align-items: center; gap: 7px; padding: 8px 16px; border-radius: 8px; font: 600 13px/1 "Manrope", sans-serif; text-decoration: none; cursor: pointer; transition: all 0.2s ease; border: none; }
+.video-toolbar-btn.primary { background: var(--blue); color: white; font-weight: 700; box-shadow: 0 4px 14px rgba(11, 49, 216, 0.35); }
+.video-toolbar-btn.primary:hover { background: var(--blue-bright); color: white; transform: translateY(-1px); }
+.video-toolbar-btn.secondary { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255, 255, 255, 0.12); }
+.video-toolbar-btn.secondary:hover { background: rgba(255, 255, 255, 0.16); color: white; }
+.video-toolbar-btn.mode-btn { background: rgba(255, 255, 255, 0.05); color: rgba(255, 255, 255, 0.75); }
+.video-toolbar-btn.mode-btn:hover { background: rgba(255, 255, 255, 0.12); color: white; }
+.video-toolbar-btn.share-btn { background: rgba(255, 255, 255, 0.08); color: white; border: 1px solid rgba(255, 255, 255, 0.12); }
+.video-toolbar-btn.share-btn:hover { background: rgba(255, 255, 255, 0.18); color: white; }
+
+/* ==========================================================================
+   AUDIO PLAYER COMPONENT (LUXURY PODCAST / SERMON CONSOLE)
+   ========================================================================== */
+.audio-sermon-player-card { position: relative; border-radius: 16px; overflow: hidden; background: linear-gradient(145deg, #091544 0%, #030822 100%); color: white; box-shadow: 0 20px 50px rgba(4, 15, 80, 0.28); border: 1px solid rgba(255, 255, 255, 0.1); }
+.audio-player-bg-art { position: absolute; inset: 0; background-size: cover; background-position: center; filter: blur(36px) brightness(0.22); opacity: 0.6; pointer-events: none; }
+.audio-player-content { position: relative; z-index: 2; padding: 32px 36px; display: flex; flex-direction: column; gap: 26px; }
+
+/* Track Header: Artwork, Title, Preacher */
+.audio-track-header { display: flex; align-items: center; gap: 24px; }
+.audio-artwork-wrapper { position: relative; width: 100px; height: 100px; border-radius: 12px; overflow: hidden; flex-shrink: 0; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); border: 2px solid rgba(255, 255, 255, 0.15); }
+.audio-artwork-img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s ease; }
+.audio-artwork-img.playing { transform: scale(1.06); }
+
+/* Equalizer Bars Overlay */
+.audio-equalizer-bars { position: absolute; bottom: 8px; right: 8px; display: flex; gap: 3px; align-items: flex-end; height: 20px; padding: 3px 6px; background: rgba(3, 10, 40, 0.75); border-radius: 4px; backdrop-filter: blur(4px); }
+.audio-equalizer-bars .bar { width: 3px; background: #60a5fa; border-radius: 2px; animation: bounceBar 1.2s ease-in-out infinite alternate; }
+.audio-equalizer-bars .bar-1 { height: 16px; animation-delay: 0.1s; }
+.audio-equalizer-bars .bar-2 { height: 8px; animation-delay: 0.4s; }
+.audio-equalizer-bars .bar-3 { height: 18px; animation-delay: 0.25s; }
+.audio-equalizer-bars .bar-4 { height: 10px; animation-delay: 0.6s; }
+@keyframes bounceBar { 0% { height: 4px; } 100% { height: 18px; } }
+
+.audio-meta-info { flex: 1; min-width: 0; }
+.audio-meta-pills { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; flex-wrap: wrap; }
+.audio-tag-badge { display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px; border-radius: 100px; background: rgba(11, 49, 216, 0.35); color: #93c5fd; font: 700 11px/1 "Manrope", sans-serif; text-transform: uppercase; letter-spacing: .05em; border: 1px solid rgba(147, 197, 253, 0.3); }
+.audio-date-badge { color: rgba(255, 255, 255, 0.55); font-size: 12px; font-weight: 600; }
+.audio-track-title { font: 800 24px/1.25 "Manrope", sans-serif; color: white; margin: 0 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.audio-speaker-name { font-size: 15px; color: rgba(255, 255, 255, 0.75); margin: 0; font-weight: 600; }
+
+/* Scrubber & Progress */
+.audio-playback-controls { display: flex; flex-direction: column; gap: 18px; }
+.audio-progress-section { display: flex; flex-direction: column; gap: 8px; }
+.audio-scrubber-track { position: relative; width: 100%; height: 8px; border-radius: 100px; background: rgba(255, 255, 255, 0.15); cursor: pointer; transition: height 0.15s ease; }
+.audio-scrubber-track:hover { height: 10px; }
+.audio-scrubber-fill { position: absolute; top: 0; left: 0; bottom: 0; border-radius: 100px; background: linear-gradient(90deg, #2563eb, #60a5fa); box-shadow: 0 0 12px rgba(96, 165, 250, 0.5); }
+.audio-scrubber-thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 16px; height: 16px; border-radius: 50%; background: white; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); pointer-events: none; transition: transform 0.15s ease; }
+.audio-scrubber-track:hover .audio-scrubber-thumb { transform: translate(-50%, -50%) scale(1.2); }
+.audio-time-row { display: flex; justify-content: space-between; font-size: 12px; font-weight: 700; color: rgba(255, 255, 255, 0.6); font-family: monospace, sans-serif; }
+
+/* Central Audio Buttons */
+.audio-buttons-row { display: flex; align-items: center; justify-content: center; gap: 20px; flex-wrap: wrap; }
+.audio-action-btn { position: relative; width: 44px; height: 44px; border-radius: 50%; border: none; background: rgba(255, 255, 255, 0.1); color: white; display: grid; place-items: center; cursor: pointer; transition: all 0.2s ease; }
+.audio-action-btn:hover { background: rgba(255, 255, 255, 0.2); transform: scale(1.08); }
+.audio-action-btn .sub-seconds { position: absolute; font-size: 9px; font-weight: 800; bottom: 8px; }
+.audio-play-master-btn { width: 66px; height: 66px; border-radius: 50%; border: none; background: var(--blue); color: white; display: grid; place-items: center; cursor: pointer; box-shadow: 0 8px 24px rgba(11, 49, 216, 0.5); transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease; }
+.audio-play-master-btn:hover { background: var(--blue-bright); transform: scale(1.1); box-shadow: 0 10px 30px rgba(11, 49, 216, 0.65); }
+.audio-play-master-btn.playing { background: #2563eb; }
+.audio-spinner { width: 24px; height: 24px; border: 3px solid rgba(255, 255, 255, 0.3); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.audio-speed-btn { padding: 6px 12px; border-radius: 100px; border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(255, 255, 255, 0.06); color: white; font: 700 12px/1 "Manrope", sans-serif; cursor: pointer; transition: background 0.2s ease; }
+.audio-speed-btn:hover { background: rgba(255, 255, 255, 0.16); }
+
+/* Volume cluster */
+.audio-volume-cluster { display: flex; align-items: center; gap: 8px; background: rgba(255, 255, 255, 0.06); padding: 4px 12px; border-radius: 100px; border: 1px solid rgba(255, 255, 255, 0.12); }
+.audio-volume-icon-btn { background: none; border: none; color: rgba(255, 255, 255, 0.8); cursor: pointer; display: grid; place-items: center; padding: 0; }
+.audio-volume-icon-btn:hover { color: white; }
+.audio-volume-slider { width: 72px; accent-color: #60a5fa; cursor: pointer; }
+
+/* Audio Link Fallback Box */
+.audio-link-fallback-box { text-align: center; padding: 20px; background: rgba(255, 255, 255, 0.05); border-radius: 10px; }
+.audio-link-fallback-box .fallback-note { color: rgba(255, 255, 255, 0.8); font-size: 14px; margin: 0 0 14px; }
+.audio-external-open-btn { display: inline-flex; align-items: center; gap: 8px; }
+
+/* Audio Player Footer Tools */
+.audio-player-footer-tools { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding-top: 18px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.footer-tools-left { display: flex; gap: 10px; align-items: center; }
+.audio-tool-link { display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px; border-radius: 8px; font: 600 13px/1 "Manrope", sans-serif; text-decoration: none; cursor: pointer; transition: all 0.2s ease; border: none; background: rgba(255, 255, 255, 0.08); color: white; }
+.audio-tool-link:hover { background: rgba(255, 255, 255, 0.16); color: white; }
+.audio-tool-link.download { background: rgba(37, 99, 235, 0.3); border: 1px solid rgba(147, 197, 253, 0.3); color: #93c5fd; }
+.audio-tool-link.download:hover { background: rgba(37, 99, 235, 0.5); color: white; }
+
+/* Photo Showcase */
+.teaching-photo-showcase { text-align: center; background: #030822; padding: 24px; border-radius: 14px; border: 1px solid var(--line); }
+.teaching-photo-img { max-width: 100%; max-height: 560px; object-fit: contain; border-radius: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4); }
+
+/* ==========================================================================
+   DETAILS GRID: NOTES & PREACHER SIDEBAR
+   ========================================================================== */
+.teaching-details-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 32px; align-items: start; }
+.teaching-notes-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 32px; box-shadow: 0 4px 20px rgba(7, 28, 153, 0.04); }
+.card-header-with-icon { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.card-header-with-icon .accent-icon { color: var(--blue); }
+.card-header-with-icon h3 { font: 700 20px/1.2 "Manrope", sans-serif; margin: 0; color: var(--ink); }
+.teaching-full-description { font-size: 16px; line-height: 1.75; color: #374151; margin: 0 0 24px; }
+
+/* Takeaways box */
+.teaching-takeaways-box { padding: 20px 24px; border-radius: 10px; background: var(--surface-soft); border-left: 4px solid var(--blue); }
+.teaching-takeaways-box h4 { display: flex; align-items: center; gap: 8px; font: 700 15px/1.2 "Manrope", sans-serif; color: var(--ink); margin: 0 0 10px; }
+.teaching-takeaways-box ul { margin: 0; padding-left: 20px; }
+.teaching-takeaways-box li { color: #4b5563; font-size: 14px; line-height: 1.65; margin-bottom: 6px; }
+.accent-gold { color: #d97706; }
+
+/* Sidebar */
+.teaching-sidebar-column { display: flex; flex-direction: column; gap: 20px; }
+.teaching-preacher-card { background: white; border: 1px solid var(--line); border-radius: 14px; padding: 26px; box-shadow: 0 4px 20px rgba(7, 28, 153, 0.04); }
+.preacher-badge { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--blue); margin-bottom: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.teaching-preacher-card h4 { font: 700 18px/1.2 "Manrope", sans-serif; margin: 0 0 8px; color: var(--ink); }
+.teaching-preacher-card p { font-size: 14px; color: var(--muted); line-height: 1.6; margin: 0 0 16px; }
+
+.teaching-help-box { background: var(--surface-soft); border: 1px solid var(--line); border-radius: 14px; padding: 22px; }
+.teaching-help-box h4 { font: 700 16px/1.2 "Manrope", sans-serif; margin: 0 0 6px; color: var(--ink); }
+.teaching-help-box p { font-size: 13px; color: var(--muted); line-height: 1.55; margin: 0; }
+
+/* Related section */
+.teaching-related-section { margin-top: 16px; padding-top: 32px; border-top: 1px solid var(--line); }
+.section-header-compact { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+.section-header-compact h3 { font: 700 24px/1.2 "Manrope", sans-serif; margin: 4px 0 0; color: var(--ink); }
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .teaching-details-grid { grid-template-columns: 1fr; }
+  .audio-track-header { flex-direction: column; text-align: center; }
+  .audio-meta-pills { justify-content: center; }
+  .audio-buttons-row { gap: 14px; }
+}
+
+@media (max-width: 620px) {
+  .teaching-speaker-strip { flex-direction: column; align-items: flex-start; }
+  .audio-player-content { padding: 20px 18px; }
+  .audio-artwork-wrapper { width: 72px; height: 72px; margin: 0 auto; }
+  .audio-track-title { font-size: 18px; }
+  .audio-volume-cluster { display: none; }
+  .audio-player-footer-tools { flex-direction: column; align-items: stretch; }
+  .audio-tool-link { justify-content: center; }
+  .video-player-toolbar { flex-direction: column; align-items: stretch; }
+  .video-toolbar-btn { justify-content: center; }
+}
