@@ -49,7 +49,7 @@ export function MediaDetailPage({ media }: MediaDetailPageProps) {
         item.type === "AUDIO" ? "Audio Sermon" : item.type === "VIDEO" ? "Video Teaching" : "Photo"
       }`}
       title={item.title}
-      intro={item.description}
+      intro={item.speaker ? `A sermon message by ${item.speaker}` : undefined}
     >
       <div className="teaching-page-container">
         {/* Navigation Breadcrumb */}
@@ -129,7 +129,17 @@ export function MediaDetailPage({ media }: MediaDetailPageProps) {
                 <BookOpenText size={24} className="accent-icon" />
                 <h3>About This Message</h3>
               </div>
-              <p className="teaching-full-description">{item.description}</p>
+              {item.description ? (
+                item.description.split(/\n+/).map((para, i) => (
+                  <p key={i} className="teaching-full-description">
+                    {para}
+                  </p>
+                ))
+              ) : (
+                <p className="teaching-full-description">
+                  Watch or listen to this inspiring teaching from the PCFS pulpit.
+                </p>
+              )}
 
               <div className="teaching-takeaways-box">
                 <h4>

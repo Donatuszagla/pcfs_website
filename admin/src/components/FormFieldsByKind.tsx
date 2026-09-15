@@ -3,6 +3,7 @@ import { useAuth } from "../auth";
 import { formatDatetimeLocal } from "../utils/helpers";
 import { GHANA_REGIONS } from "../constants/regions";
 import { FilePickerControl } from "./FilePickerControl";
+import { MediaSourcePicker } from "./MediaSourcePicker";
 
 export function FormFieldsByKind({
   kind,
@@ -239,16 +240,16 @@ export function FormFieldsByKind({
             placeholder="Upload photo / thumbnail or enter image URL..."
           />
 
-          <FilePickerControl
-            label="Media Video / Audio File or External Stream URL"
-            value={values.externalUrl || values.mediaUrl || ""}
-            onChange={(url) => {
+          <MediaSourcePicker
+            type={values.type || "VIDEO"}
+            externalUrl={values.externalUrl || values.mediaUrl || ""}
+            image={values.image || ""}
+            onChangeExternalUrl={(url) => {
               updateField("externalUrl", url);
               updateField("mediaUrl", url);
             }}
-            accept="audio/mpeg,audio/mp3,audio/wav,audio/x-m4a,audio/m4a,audio/aac,audio/ogg,video/mp4,video/webm,video/quicktime,video/ogg"
+            onChangeImage={(imgUrl) => updateField("image", imgUrl)}
             accessToken={accessToken}
-            placeholder="Paste YouTube / Vimeo / SoundCloud link or upload video / audio file..."
           />
 
           <div className="form-group span-2">

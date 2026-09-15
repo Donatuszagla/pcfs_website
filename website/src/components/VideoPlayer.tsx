@@ -16,39 +16,86 @@ export interface VideoPlayerProps {
   item: MediaItem;
 }
 
+export function extractYouTubeId(raw: string): string | null {
+  if (!raw) return null;
+  let str = raw.trim();
+
+  // If user pasted iframe embed snippet: <iframe ... src="https://..."
+  const iframeMatch = str.match(/src=["']([^"']+)["']/i);
+  if (iframeMatch) str = iframeMatch[1].trim();
+
+  // Match all YouTube URL variants including live streams and shorts
+  const patterns = [
+    /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/|live\/))([\w-]{11})/i,
+    /(?:youtube-nocookie\.com\/embed\/)([\w-]{11})/i,
+    /^([\w-]{11})$/,
+  ];
+  for (const pattern of patterns) {
+    const match = str.match(pattern);
+    if (match && match[1]) return match[1];
+  }
+  return null;
+}
+
 export function VideoPlayer({ item }: VideoPlayerProps) {
   const [isPlayingDirect, setIsPlayingDirect] = useState(false);
   const [isTheaterMode, setIsTheaterMode] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const url = item.externalUrl || "";
+  // Check all possible fields where video URL might be stored
+  const rawUrl = (
+    item.externalUrl ||
+    (item as any).mediaUrl ||
+    (item as any).videoUrl ||
+    (item as any).url ||
+    ""
+  ).trim();
+
+  // Normalize URL (strip iframe wrapper if present, add https if needed)
+  let normalizedUrl = rawUrl;
+  const iframeMatch = rawUrl.match(/src=["']([^"']+)["']/i);
+  if (iframeMatch) {
+    normalizedUrl = iframeMatch[1].trim();
+  } else if (
+    !normalizedUrl.startsWith("http://") &&
+    !normalizedUrl.startsWith("https://") &&
+    !normalizedUrl.startsWith("/") &&
+    (normalizedUrl.includes("youtube.com") ||
+      normalizedUrl.includes("youtu.be") ||
+      normalizedUrl.includes("vimeo.com"))
+  ) {
+    normalizedUrl = "https://" + normalizedUrl;
+  }
+
+  // YouTube detection
+  const youtubeId = extractYouTubeId(rawUrl);
+  const isYouTube = !!youtubeId;
+  const youtubeEmbedUrl = youtubeId
+    ? `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`
+    : "";
+
+  // Vimeo detection
+  const isVimeo = !isYouTube && !!normalizedUrl && normalizedUrl.includes("vimeo.com");
+  const getVimeoEmbedUrl = (raw: string) => {
+    const match = raw.match(
+      /vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|)(\d+)/
+    );
+    return match ? `https://player.vimeo.com/video/${match[1]}?autoplay=1` : raw;
+  };
 
   // Direct video file check (.mp4, .webm, .mov, /uploads/, etc.)
   const isDirectVideo =
-    !!url &&
-    (/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(url) ||
-      url.includes("/uploads/") ||
-      url.startsWith("/"));
+    !isYouTube &&
+    !isVimeo &&
+    !!normalizedUrl &&
+    (/\.(mp4|webm|mov|m4v|ogv)(\?.*)?$/i.test(normalizedUrl) ||
+      normalizedUrl.includes("/uploads/") ||
+      normalizedUrl.startsWith("/"));
 
-  // YouTube detection
-  const isYouTube =
-    !!url && (url.includes("youtube.com") || url.includes("youtu.be"));
-
-  const getYouTubeEmbedUrl = (rawUrl: string) => {
-    const match = rawUrl.match(
-      /(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=|shorts\/))([\w-]{11})/
-    );
-    return match
-      ? `https://www.youtube.com/embed/${match[1]}?autoplay=1&rel=0&modestbranding=1`
-      : rawUrl;
-  };
-
-  // Vimeo detection
-  const isVimeo = !!url && url.includes("vimeo.com");
-  const getVimeoEmbedUrl = (rawUrl: string) => {
-    const match = rawUrl.match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/(?:[^/]*)\/videos\/|)(\d+)/);
-    return match ? `https://player.vimeo.com/video/${match[1]}?autoplay=1` : rawUrl;
-  };
+  // Best available poster image
+  const displayPoster =
+    item.image ||
+    (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : "/images/2.jpg");
 
   const handleShare = () => {
     if (navigator.clipboard) {
@@ -77,7 +124,7 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
                 }}
               >
                 <img
-                  src={item.image || "/images/2.jpg"}
+                  src={displayPoster}
                   alt={item.title}
                   className="video-poster-img"
                 />
@@ -92,12 +139,12 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
               </div>
             ) : (
               <video
-                key={url}
-                src={url}
+                key={normalizedUrl}
+                src={normalizedUrl}
                 controls
                 autoPlay
                 playsInline
-                poster={item.image}
+                poster={displayPoster}
                 className="native-html5-video"
               >
                 Your browser does not support HTML5 video playback.
@@ -108,7 +155,8 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
           /* YouTube Embed Player */
           <div className="iframe-video-wrapper">
             <iframe
-              src={getYouTubeEmbedUrl(url)}
+              key={youtubeEmbedUrl}
+              src={youtubeEmbedUrl}
               title={item.title}
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
@@ -119,24 +167,24 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
           /* Vimeo Embed Player */
           <div className="iframe-video-wrapper">
             <iframe
-              src={getVimeoEmbedUrl(url)}
+              src={getVimeoEmbedUrl(normalizedUrl)}
               title={item.title}
               allow="autoplay; fullscreen; picture-in-picture"
               allowFullScreen
               className="embedded-video-iframe"
             />
           </div>
-        ) : url ? (
+        ) : normalizedUrl ? (
           /* Generic Video or Direct Link Fallback */
           <div className="generic-video-wrapper">
             <img
-              src={item.image || "/images/2.jpg"}
+              src={displayPoster}
               alt={item.title}
               className="video-poster-img"
             />
             <div className="video-poster-scrim" />
             <a
-              href={url}
+              href={normalizedUrl}
               target="_blank"
               rel="noreferrer"
               className="video-open-external-large-btn"
@@ -149,14 +197,35 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
           /* Pending Upload Placeholder */
           <div className="video-pending-wrapper">
             <img
-              src={item.image || "/images/2.jpg"}
+              src={displayPoster}
               alt={item.title}
               className="video-poster-img blurred"
             />
             <div className="video-pending-message">
               <VideoCamera size={42} />
               <h3>Video Stream Pending</h3>
-              <p>The media team is currently processing the broadcast recording for this teaching.</p>
+              <p>
+                The broadcast recording for this teaching is currently being processed by the PCFS
+                media team.
+              </p>
+              <a
+                href={`https://www.youtube.com/results?search_query=${encodeURIComponent(
+                  `PCFS ${item.title} ${item.speaker || ""}`
+                )}`}
+                target="_blank"
+                rel="noreferrer"
+                className="button secondary micro"
+                style={{
+                  marginTop: "14px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  padding: "8px 16px",
+                }}
+              >
+                <YoutubeLogo size={18} weight="fill" style={{ color: "#ff0000" }} />
+                <span>Search on YouTube PCFS Channel</span>
+              </a>
             </div>
           </div>
         )}
@@ -166,9 +235,9 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
       <div className="video-player-toolbar">
         <div className="video-toolbar-left">
           {/* Direct Download button */}
-          {url && isDirectVideo && (
+          {normalizedUrl && isDirectVideo && (
             <a
-              href={url}
+              href={normalizedUrl}
               download
               target="_blank"
               rel="noreferrer"
@@ -181,9 +250,13 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
           )}
 
           {/* External Source Link */}
-          {url && (
+          {(normalizedUrl || isYouTube) && (
             <a
-              href={url}
+              href={
+                isYouTube && youtubeId
+                  ? `https://www.youtube.com/watch?v=${youtubeId}`
+                  : normalizedUrl
+              }
               target="_blank"
               rel="noreferrer"
               className="video-toolbar-btn secondary"

@@ -99,7 +99,16 @@ function sanitizeValues(values: Record<string, unknown>): Record<string, unknown
 
 function validateDomainValues(kind: ContentKind, values: Record<string, unknown>): void {
   if (kind === "MEDIA" && typeof values.externalUrl === "string" && values.externalUrl.trim()) {
-    const trimmed = values.externalUrl.trim();
+    let trimmed = values.externalUrl.trim();
+    const iframeMatch = trimmed.match(/src=["']([^"']+)["']/i);
+    if (iframeMatch) {
+      trimmed = iframeMatch[1].trim();
+      values.externalUrl = trimmed;
+    }
+    if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://") && !trimmed.startsWith("/")) {
+      trimmed = "https://" + trimmed;
+      values.externalUrl = trimmed;
+    }
     if (!trimmed.startsWith("/")) {
       let host = "";
       try {
@@ -113,7 +122,16 @@ function validateDomainValues(kind: ContentKind, values: Record<string, unknown>
       } catch {
         // Ignore URL parsing errors for R2 endpoint
       }
-      const approvedHosts = ["youtube.com", "youtu.be", "vimeo.com", "soundcloud.com", "facebook.com"];
+      const approvedHosts = [
+        "youtube.com",
+        "youtu.be",
+        "youtube-nocookie.com",
+        "vimeo.com",
+        "soundcloud.com",
+        "facebook.com",
+        "commondatastorage.googleapis.com",
+        "soundhelix.com",
+      ];
       if (r2Host) approvedHosts.push(r2Host);
       if (config.MINIO_ENDPOINT) {
         approvedHosts.push(config.MINIO_ENDPOINT.replace(/^https?:\/\//, "").split(":")[0]);

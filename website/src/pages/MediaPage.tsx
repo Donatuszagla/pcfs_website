@@ -65,7 +65,7 @@ export function MediaPage({ media }: MediaPageProps) {
   // Filtered by search & active tabs
   const filteredSermons = useMemo(() => {
     return allSermons.filter((item) =>
-      `${item.title} ${item.speaker} ${item.description}`
+      `${item.title} ${item.speaker} ${item.description} ${item.externalUrl || ""}`
         .toLowerCase()
         .includes(search.toLowerCase())
     );
@@ -73,7 +73,7 @@ export function MediaPage({ media }: MediaPageProps) {
 
   const filteredGallery = useMemo(() => {
     return allGallery.filter((item) => {
-      const matchesSearch = `${item.title} ${item.speaker} ${item.description}`
+      const matchesSearch = `${item.title} ${item.speaker} ${item.description} ${item.externalUrl || ""}`
         .toLowerCase()
         .includes(search.toLowerCase());
       if (!matchesSearch) return false;
