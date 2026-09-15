@@ -67,6 +67,7 @@ export const typeDefs = `#graphql
     description: String
     publishedAt: DateTime
     externalUrl: String
+    mediaUrl: String
     image: String
     featured: Boolean!
     seo: Seo

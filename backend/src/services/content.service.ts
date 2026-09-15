@@ -106,6 +106,17 @@ export async function saveContent(actor: Actor, data: { kind: ContentKind; id?: 
   if (["USER", "SUBMISSION"].includes(data.kind)) throw new Error("Use the dedicated workflow for this record type");
   const model = registry[data.kind];
   const values = sanitizeValues(data.values);
+  if (data.kind === "MEDIA") {
+    if (!values.externalUrl && values.mediaUrl) {
+      values.externalUrl = values.mediaUrl;
+    }
+    if (!values.mediaUrl && values.externalUrl) {
+      values.mediaUrl = values.externalUrl;
+    }
+    if (values.status === "PUBLISHED" && !values.publishedAt) {
+      values.publishedAt = new Date();
+    }
+  }
   validateDomainValues(data.kind, values);
   if (data.id) return model.findByIdAndUpdate(data.id, { $set: values }, { new: true, runValidators: true }).lean();
   return (await model.create(values)).toObject();

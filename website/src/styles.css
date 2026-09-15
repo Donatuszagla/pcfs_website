@@ -394,6 +394,8 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .video-poster-scrim { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(3, 10, 40, 0.3) 0%, rgba(3, 10, 40, 0.75) 100%); }
 .video-center-play-circle { position: relative; z-index: 2; width: 84px; height: 84px; border-radius: 50%; background: var(--blue); color: white; display: grid; place-items: center; box-shadow: 0 0 0 10px rgba(11, 49, 216, 0.35), 0 12px 36px rgba(0, 0, 0, 0.5); transition: transform 0.25s ease, background 0.25s ease, box-shadow 0.25s ease; }
 .video-poster-overlay:hover .video-center-play-circle { transform: scale(1.12); background: var(--blue-bright); box-shadow: 0 0 0 16px rgba(11, 49, 216, 0.45), 0 16px 42px rgba(0, 0, 0, 0.6); }
+.youtube-play-circle { background: rgba(0,0,0,0.6) !important; box-shadow: 0 0 0 10px rgba(0, 0, 0, 0.2), 0 12px 36px rgba(0, 0, 0, 0.5) !important; border: none; }
+.video-poster-overlay:hover .youtube-play-circle { background: rgba(0,0,0,0.8) !important; transform: scale(1.1); }
 .video-poster-badge { position: absolute; bottom: 20px; left: 24px; z-index: 2; display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 100px; background: rgba(3, 12, 54, 0.85); color: white; font: 700 12px/1 "Manrope", sans-serif; backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.15); }
 
 /* External play button fallback */

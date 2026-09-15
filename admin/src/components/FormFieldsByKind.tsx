@@ -9,10 +9,12 @@ export function FormFieldsByKind({
   kind,
   values,
   updateField,
+  updateFields,
 }: {
   kind: ContentKind;
   values: Record<string, any>;
   updateField: (field: string, val: any) => void;
+  updateFields?: (newFields: Record<string, any>) => void;
 }) {
   const { accessToken } = useAuth();
   switch (kind) {
@@ -244,9 +246,19 @@ export function FormFieldsByKind({
             type={values.type || "VIDEO"}
             externalUrl={values.externalUrl || values.mediaUrl || ""}
             image={values.image || ""}
-            onChangeExternalUrl={(url) => {
-              updateField("externalUrl", url);
-              updateField("mediaUrl", url);
+            onChangeExternalUrl={(url, autoThumb) => {
+              const updates: Record<string, any> = {
+                externalUrl: url,
+                mediaUrl: url,
+              };
+              if (autoThumb && !values.image) {
+                updates.image = autoThumb;
+              }
+              if (updateFields) {
+                updateFields(updates);
+              } else {
+                updateField("externalUrl", url);
+              }
             }}
             onChangeImage={(imgUrl) => updateField("image", imgUrl)}
             accessToken={accessToken}

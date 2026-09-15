@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { YoutubeLogo, VideoCamera, FileArrowUp, LinkSimple, CheckCircle, Sparkle } from "@phosphor-icons/react";
 import { FilePickerControl } from "./FilePickerControl";
 
@@ -6,7 +6,7 @@ export interface MediaSourcePickerProps {
   type: "VIDEO" | "AUDIO" | "PHOTO";
   externalUrl: string;
   image: string;
-  onChangeExternalUrl: (url: string) => void;
+  onChangeExternalUrl: (url: string, autoThumbnail?: string) => void;
   onChangeImage: (url: string) => void;
   accessToken?: string;
 }
@@ -60,18 +60,23 @@ export function MediaSourcePicker({
   const [videoMode, setVideoMode] = useState<"link" | "upload">(isDirectUpload ? "upload" : "link");
   const [audioMode, setAudioMode] = useState<"upload" | "link">(isDirectUpload ? "upload" : "link");
 
+  // Keep mode in sync when externalUrl changes (e.g. when opening a saved draft)
+  useEffect(() => {
+    if (externalUrl) {
+      const isUpload = externalUrl.includes("/uploads/") || /\.(mp4|webm|mov|mp3|m4a|wav)(\?.*)?$/i.test(externalUrl);
+      setVideoMode(isUpload ? "upload" : "link");
+      setAudioMode(isUpload ? "upload" : "link");
+    }
+  }, [externalUrl]);
+
   const youtubeId = extractYouTubeId(externalUrl);
   const isYouTube = !!youtubeId;
 
   const handleUrlInput = (raw: string) => {
     const clean = normalizeMediaUrl(raw);
-    onChangeExternalUrl(clean);
-
-    // If there is no cover image yet, auto-set YouTube thumbnail
     const ytId = extractYouTubeId(clean);
-    if (ytId && !image) {
-      onChangeImage(`https://img.youtube.com/vi/${ytId}/hqdefault.jpg`);
-    }
+    const autoThumb = ytId && !image ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : undefined;
+    onChangeExternalUrl(clean, autoThumb);
   };
 
   const handleApplyYouTubeThumbnail = () => {

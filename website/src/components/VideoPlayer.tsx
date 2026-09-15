@@ -70,9 +70,6 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
   // YouTube detection
   const youtubeId = extractYouTubeId(rawUrl);
   const isYouTube = !!youtubeId;
-  const youtubeEmbedUrl = youtubeId
-    ? `https://www.youtube.com/embed/${youtubeId}?autoplay=1&rel=0&modestbranding=1`
-    : "";
 
   // Vimeo detection
   const isVimeo = !isYouTube && !!normalizedUrl && normalizedUrl.includes("vimeo.com");
@@ -152,13 +149,13 @@ export function VideoPlayer({ item }: VideoPlayerProps) {
             )}
           </div>
         ) : isYouTube ? (
-          /* YouTube Embed Player */
+          /* YouTube Embed Player — renders immediately so the user can play it right away, matching the admin experience */
           <div className="iframe-video-wrapper">
             <iframe
-              key={youtubeEmbedUrl}
-              src={youtubeEmbedUrl}
+              key={youtubeId}
+              src={`https://www.youtube.com/embed/${youtubeId}?rel=0&modestbranding=1`}
               title={item.title}
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               className="embedded-video-iframe"
             />
