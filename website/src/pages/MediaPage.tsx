@@ -8,10 +8,11 @@ import {
   CalendarBlank,
   User,
 } from "@phosphor-icons/react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { EmptyState } from "../components/EmptyState";
 import { PageLayout } from "../components/PageLayout";
+import { Pagination } from "../components/Pagination";
 import { PhoneGalleryViewer } from "../components/PhoneGalleryViewer";
 import type { MediaItem } from "../types";
 import { formatDate } from "../utils/formatters";
@@ -28,6 +29,18 @@ export function MediaPage({ media }: MediaPageProps) {
   const [activeTab, setActiveTab] = useState<MainTab>("All");
   const [galleryFilter, setGalleryFilter] = useState<GalleryFilter>("All");
   const [galleryViewerIndex, setGalleryViewerIndex] = useState<number | null>(null);
+
+  // Pagination states
+  const [sermonPage, setSermonPage] = useState(1);
+  const sermonsPerPage = 6;
+  const [galleryPage, setGalleryPage] = useState(1);
+  const galleryPerPage = 12;
+
+  // Reset pagination when search, tabs, or filter change
+  useEffect(() => {
+    setSermonPage(1);
+    setGalleryPage(1);
+  }, [search, activeTab, galleryFilter]);
 
   // Categorize media into Sermons vs Gallery
   const isSermon = (item: MediaItem) => {
@@ -176,35 +189,46 @@ export function MediaPage({ media }: MediaPageProps) {
       {activeTab === "Sermons" && (
         <section className="sermons-section" style={{ marginTop: "32px" }}>
           {filteredSermons.length > 0 ? (
-            <div className="cards-grid">
-              {filteredSermons.map((item) => (
-                <article className="content-card sermon-card" key={item.id}>
-                  <div className="sermon-card-img-wrapper">
-                    <img src={item.image} alt={item.title} />
-                    <span className="sermon-type-badge">
-                      {item.type === "AUDIO" ? "Audio Sermon" : "Video Teaching"}
-                    </span>
-                  </div>
-                  <div>
-                    <span>{item.category || "Sermon"}</span>
-                    <h2>{item.title}</h2>
-                    <p>
-                      <User size={15} />
-                      {item.speaker}
-                    </p>
-                    {item.publishedAt && (
-                      <p style={{ fontSize: "13px", marginTop: "4px" }}>
-                        <CalendarBlank size={15} />
-                        {formatDate(item.publishedAt)}
-                      </p>
-                    )}
-                    <Link to={`/media/${item.slug}`} className="sermon-action-link">
-                      {item.type === "AUDIO" ? "Listen to Sermon" : "Watch Teaching"} →
-                    </Link>
-                  </div>
-                </article>
-              ))}
-            </div>
+            <>
+              <div className="cards-grid">
+                {filteredSermons
+                  .slice((sermonPage - 1) * sermonsPerPage, sermonPage * sermonsPerPage)
+                  .map((item) => (
+                    <article className="content-card sermon-card" key={item.id}>
+                      <div className="sermon-card-img-wrapper">
+                        <img src={item.image} alt={item.title} />
+                        <span className="sermon-type-badge">
+                          {item.type === "AUDIO" ? "Audio Sermon" : "Video Teaching"}
+                        </span>
+                      </div>
+                      <div>
+                        <span>{item.category || "Sermon"}</span>
+                        <h2>{item.title}</h2>
+                        <p>
+                          <User size={15} />
+                          {item.speaker}
+                        </p>
+                        {item.publishedAt && (
+                          <p style={{ fontSize: "13px", marginTop: "4px" }}>
+                            <CalendarBlank size={15} />
+                            {formatDate(item.publishedAt)}
+                          </p>
+                        )}
+                        <Link to={`/media/${item.slug}`} className="sermon-action-link">
+                          {item.type === "AUDIO" ? "Listen to Sermon" : "Watch Teaching"} →
+                        </Link>
+                      </div>
+                    </article>
+                  ))}
+              </div>
+
+              <Pagination
+                currentPage={sermonPage}
+                totalItems={filteredSermons.length}
+                pageSize={sermonsPerPage}
+                onPageChange={setSermonPage}
+              />
+            </>
           ) : (
             <EmptyState title="No sermons found" body="Try searching for another sermon title or preacher." />
           )}
@@ -215,35 +239,46 @@ export function MediaPage({ media }: MediaPageProps) {
       {activeTab === "Gallery" && (
         <section className="gallery-section" style={{ marginTop: "32px" }}>
           {filteredGallery.length > 0 ? (
-            <div className="phone-gallery-grid">
-              {filteredGallery.map((item) => (
-                <div
-                  key={item.id}
-                  className="phone-gallery-tile"
-                  onClick={() => openGalleryViewer(item)}
-                  role="button"
-                  tabIndex={0}
-                  onKeyDown={(e) => e.key === "Enter" && openGalleryViewer(item)}
-                  aria-label={`Open ${item.title}`}
-                >
-                  <img src={item.image} alt={item.title} loading="lazy" />
+            <>
+              <div className="phone-gallery-grid">
+                {filteredGallery
+                  .slice((galleryPage - 1) * galleryPerPage, galleryPage * galleryPerPage)
+                  .map((item) => (
+                    <div
+                      key={item.id}
+                      className="phone-gallery-tile"
+                      onClick={() => openGalleryViewer(item)}
+                      role="button"
+                      tabIndex={0}
+                      onKeyDown={(e) => e.key === "Enter" && openGalleryViewer(item)}
+                      aria-label={`Open ${item.title}`}
+                    >
+                      <img src={item.image} alt={item.title} loading="lazy" />
 
-                  {/* Video Play badge overlay */}
-                  {item.type === "VIDEO" && (
-                    <div className="gallery-tile-video-badge">
-                      <Play size={14} weight="fill" />
-                      <span>VIDEO</span>
+                      {/* Video Play badge overlay */}
+                      {item.type === "VIDEO" && (
+                        <div className="gallery-tile-video-badge">
+                          <Play size={14} weight="fill" />
+                          <span>VIDEO</span>
+                        </div>
+                      )}
+
+                      {/* Hover Caption Pill */}
+                      <div className="gallery-tile-caption">
+                        <h4>{item.title}</h4>
+                        {item.speaker && <small>{item.speaker}</small>}
+                      </div>
                     </div>
-                  )}
+                  ))}
+              </div>
 
-                  {/* Hover Caption Pill */}
-                  <div className="gallery-tile-caption">
-                    <h4>{item.title}</h4>
-                    {item.speaker && <small>{item.speaker}</small>}
-                  </div>
-                </div>
-              ))}
-            </div>
+              <Pagination
+                currentPage={galleryPage}
+                totalItems={filteredGallery.length}
+                pageSize={galleryPerPage}
+                onPageChange={setGalleryPage}
+              />
+            </>
           ) : (
             <EmptyState
               title="No gallery items found"

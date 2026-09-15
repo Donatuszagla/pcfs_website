@@ -278,6 +278,67 @@ export function FormFieldsByKind({
         </div>
       );
 
+    case "PAGE":
+      return (
+        <div className="form-grid">
+          <div className="form-group span-2">
+            <label>Page Title <span className="required">*</span></label>
+            <input
+              className="form-control"
+              value={values.title || ""}
+              onChange={(e) => updateField("title", e.target.value)}
+              placeholder="e.g. About Us"
+              required
+            />
+          </div>
+
+          <div className="form-group span-2">
+            <label>URL Slug <span className="required">*</span></label>
+            <input
+              className="form-control"
+              value={values.slug || ""}
+              onChange={(e) => updateField("slug", e.target.value)}
+              placeholder="e.g. about"
+              required
+            />
+            <small style={{ color: "var(--muted)", fontSize: "12px", marginTop: "4px", display: "block" }}>
+              Public website route: /{values.slug || ""}
+            </small>
+          </div>
+
+          <div className="form-group span-2">
+            <label>Headline / Page Summary</label>
+            <textarea
+              className="form-textarea"
+              style={{ minHeight: "80px" }}
+              value={values.description || ""}
+              onChange={(e) => updateField("description", e.target.value)}
+              placeholder="A concise overview or intro statement for this page..."
+            />
+          </div>
+
+          <div className="form-group span-2">
+            <label>Main Body Content / Details</label>
+            <textarea
+              className="form-textarea"
+              style={{ minHeight: "140px" }}
+              value={values.body || ""}
+              onChange={(e) => updateField("body", e.target.value)}
+              placeholder="Detailed paragraphs, descriptions, or policy text..."
+            />
+          </div>
+
+          <FilePickerControl
+            label="Hero / Page Banner Image"
+            value={values.image || ""}
+            onChange={(url) => updateField("image", url)}
+            accept="image/jpeg,image/png,image/webp,image/avif"
+            accessToken={accessToken}
+            placeholder="Upload page banner photo or paste image URL..."
+          />
+        </div>
+      );
+
     default:
       return (
         <div className="form-grid">

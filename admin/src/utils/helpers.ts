@@ -17,7 +17,7 @@ export function getDefaultValuesForKind(kind: ContentKind): Record<string, any> 
     case "MEDIA":
       return { title: "", slug: "", type: "VIDEO", speaker: "", category: "Teaching", description: "", image: "", externalUrl: "", mediaUrl: "", featured: false };
     case "PAGE":
-      return { title: "", slug: "", description: "", body: "" };
+      return { title: "", slug: "", description: "", body: "", image: "" };
     default:
       return { title: "", slug: "", description: "" };
   }

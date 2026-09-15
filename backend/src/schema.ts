@@ -25,7 +25,7 @@ export const typeDefs = `#graphql
     socialLinks: [SocialLink!]!
     seo: Seo
   }
-  type Page { id: ID! title: String! slug: String! sections: JSON! status: String! seo: Seo }
+  type Page { id: ID! title: String! slug: String! description: String body: String image: String sections: JSON! status: String! seo: Seo publishedAt: DateTime }
   type Branch {
     id: ID!
     name: String!

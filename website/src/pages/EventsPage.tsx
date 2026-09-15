@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { EmptyState } from "../components/EmptyState";
 import { EventCard } from "../components/EventCard";
 import { PageLayout } from "../components/PageLayout";
+import { Pagination } from "../components/Pagination";
 import type { Event } from "../types";
 
 export interface EventsPageProps {
@@ -8,6 +10,10 @@ export interface EventsPageProps {
 }
 
 export function EventsPage({ events }: EventsPageProps) {
+  const [upcomingPage, setUpcomingPage] = useState(1);
+  const [pastPage, setPastPage] = useState(1);
+  const eventsPerPage = 6;
+
   const now = new Date();
   /** An event is "upcoming/ongoing" when it has not yet ended.
    *  Falls back to startAt when endAt is missing or clearly swapped (endAt < startAt). */
@@ -32,6 +38,16 @@ export function EventsPage({ events }: EventsPageProps) {
     if (validStart) return validStart < now;
     return false;
   });
+
+  const paginatedUpcoming = upcoming.slice(
+    (upcomingPage - 1) * eventsPerPage,
+    upcomingPage * eventsPerPage
+  );
+  const paginatedPast = past.slice(
+    (pastPage - 1) * eventsPerPage,
+    pastPage * eventsPerPage
+  );
+
   return (
     <PageLayout
       eyebrow="Gather with us"
@@ -42,10 +58,16 @@ export function EventsPage({ events }: EventsPageProps) {
         <>
           <h2>Upcoming events</h2>
           <div className="cards-grid">
-            {upcoming.map((event) => (
+            {paginatedUpcoming.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
+          <Pagination
+            currentPage={upcomingPage}
+            totalItems={upcoming.length}
+            pageSize={eventsPerPage}
+            onPageChange={setUpcomingPage}
+          />
         </>
       ) : (
         <EmptyState
@@ -57,10 +79,16 @@ export function EventsPage({ events }: EventsPageProps) {
         <>
           <h2 className="subsection-heading">Past events</h2>
           <div className="cards-grid">
-            {past.map((event) => (
+            {paginatedPast.map((event) => (
               <EventCard key={event.id} event={event} />
             ))}
           </div>
+          <Pagination
+            currentPage={pastPage}
+            totalItems={past.length}
+            pageSize={eventsPerPage}
+            onPageChange={setPastPage}
+          />
         </>
       )}
     </PageLayout>
